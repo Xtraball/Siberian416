@@ -208,6 +208,11 @@ class Application_Model_SourceQueue extends Core_Model_Default {
         curl_setopt($request, CURLOPT_TIMEOUT, 3);
         curl_setopt($request, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
         curl_setopt($request, CURLOPT_USERPWD, "ios-builder:ced2eb561db43afb09c633b8f68c1f17");
+
+        # Disable DNS Cache
+        curl_setopt($request, CURLOPT_DNS_USE_GLOBAL_CACHE, false);
+        curl_setopt($request, CURLOPT_DNS_CACHE_TIMEOUT, 2);
+
         # Call
         curl_exec($request);
         # Closing connection
