@@ -1,61 +1,110 @@
-<form class="form-horizontal" ng-submit="save()">
-    <sb-section title="section_title" button="button">
-        <br />
-            <div class="form-group">
-                <div class="col-md-3">
-                    <label for="role_code"><?php echo __("Code"); ?></label>
-                </div>
-                <div class="col-md-9">
-                    <label for="role_label"><?php echo __("Label"); ?></label>
+<form class="form-horizontal"
+      ng-submit="save()">
+    <sb-section title="section_title"
+                button="button">
+        <br/>
+        <div class="form-group">
+            <div class="col-md-5">
+                <label for="role_code"><?php echo __("Code"); ?></label>
+            </div>
+            <div class="col-md-5">
+                <label for="role_label"><?php echo __("Label"); ?></label>
+            </div>
+            <div class="col-md-2">
+                <label for="role_level"><?php echo __("Level"); ?></label>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-md-5">
+                <input type="text"
+                       id="role_code"
+                       class="form-control"
+                       ng-model="role.code"/>
+            </div>
+            <div class="col-md-5">
+                <input type="text"
+                       id="role_label"
+                       class="form-control"
+                       ng-model="role.label"/>
+            </div>
+            <div class="col-md-2">
+                <input type="number"
+                       min="2"
+                       max="9999"
+                       step="1"
+                       id="role_level"
+                       class="form-control"
+                       ng-model="role.level"/>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-md-12">
+                <label for="default_role">
+                    <input type="checkbox"
+                           id="default_role"
+                           ng-model="role.default"/>
+                    <?php echo __("This role will be the default one for the whole platform."); ?>
+                </label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-md-12">
+                <div class="alert alert-info">
+                    <?php echo __("<b>Role hierarchy:</b> a user with a role at level 50 can't assign roles which have a level <=50") ?>
+                    <br />
+                    <?php echo __("Admin level is 1 and default level is 99 for all new/exisiting roles.") ?>
                 </div>
             </div>
-            <div class="form-group">
-                <div class="col-md-3">
-                    <input type="text" id="role_code" class="form-control" ng-model="role.code" />
-                </div>
-                <div class="col-md-9">
-                    <input type="text" id="role_label" class="form-control" ng-model="role.label" />
-                </div>
-            </div>
-            <div class="form-group">
-                <div class="col-md-12">
-                    <label for="default_role">
-                        <input type="checkbox" id="default_role" ng-model="role.default"/>
-                        <?php echo __("This role will be the default one for the whole platform."); ?>
-                    </label>
-                </div>
-            </div>
+        </div>
+
+
     </sb-section>
-    
-    <sb-section title="'<?php echo addslashes(__("Manage access")); ?>'" button="button">
+
+    <sb-section title="'<?php echo addslashes(__("Manage access")); ?>'"
+                button="button">
         <ul class="list-group">
-            <li ng-repeat="resource in resources" class="list-group-item" ng-include="'role/resources/list.html'" />
+            <li ng-repeat="resource in resources"
+                class="list-group-item"
+                ng-include="'role/resources/list.html'"></li>
         </ul>
     </sb-section>
 
     <div class="form-group">
         <div class="col-md-12 text-right">
-            <button type="submit" class="btn btn-primary"><?php echo __("Save"); ?></button>
+            <button type="submit"
+                    class="btn btn-primary"><?php echo __("Save"); ?></button>
         </div>
     </div>
 
-    <script type="text/ng-template" id="role/resources/list.html">
+    <script type="text/ng-template"
+            id="role/resources/list.html">
 
         <div class="checkbox">
-            <i class="fa pointer bold" ng-click="resource.children_are_visible = !resource.children_are_visible" ng-if="resource.children.length > 0" ng-class="{'fa-plus': !resource.children_are_visible, 'fa-minus': resource.children_are_visible }"></i>
+            <i class="fa pointer bold"
+               ng-click="resource.children_are_visible = !resource.children_are_visible"
+               ng-if="resource.children.length > 0"
+               ng-class="{'fa-plus': !resource.children_are_visible, 'fa-minus': resource.children_are_visible }"></i>
             <label ng-class="{'text-danger': !resource.is_allowed,'text-success': resource.is_allowed}">
-                <input type="checkbox" ng-checked="resource.is_allowed" ng-model="resource.is_allowed" ng-change="toggleIsAllowed(resource)"/>
+                <input type="checkbox"
+                       ng-checked="resource.is_allowed"
+                       ng-model="resource.is_allowed"
+                       ng-change="toggleIsAllowed(resource)"/>
                 <span ng-if="resource.label.length">{{ resource.label }}</span>
                 <span ng-if="!resource.label.length">{{ resource.code }}</span>
                 <span ng-if="resource.is_feature && !resource.is_enabled"
                       style="color: #a94442;">(<?php echo __('this feature is globally disabled!') ?>)</span>
             </label>
         </div>
-        
-        <ul class="list-group list-child" ng-if="resource.children" ng-show="resource.children_are_visible">
-            <li ng-repeat="resource in resource.children" class="list-group-item" ng-include="'role/resources/list.html'" />
+
+        <ul class="list-group list-child"
+            ng-if="resource.children"
+            ng-show="resource.children_are_visible">
+            <li ng-repeat="resource in resource.children"
+                class="list-group-item"
+                ng-include="'role/resources/list.html'"></li>
         </ul>
 
     </script>
-
 </form>

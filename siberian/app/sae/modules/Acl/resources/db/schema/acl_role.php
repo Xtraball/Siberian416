@@ -23,4 +23,8 @@ $schemas['acl_role'] = array(
         'charset' => 'utf8',
         'collation' => 'utf8_unicode_ci',
     ),
+    'level' => [
+        'type' => 'int(11)',
+        'default' => 99
+    ],
 );

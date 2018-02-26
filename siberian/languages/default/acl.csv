@@ -14,3 +14,6 @@
 "You don't have any role yet"
 "Your role has been successfully deleted"
 "Your role has been successfully saved"
+"<b>Role hierarchy:</b> a user with a role at level 50 can't assign roles which have a level <=50"
+"Admin level is 1 and default level is 99 for all new/exisiting roles."
+"Level"

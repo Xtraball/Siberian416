@@ -1,61 +1,64 @@
 <?php
 
-class Acl_Backoffice_Role_EditController extends Backoffice_Controller_Default
-{
+/**
+ * Class Acl_Backoffice_Role_EditController
+ */
+class Acl_Backoffice_Role_EditController extends Backoffice_Controller_Default {
 
+    /**
+     * 
+     */
     public function loadAction() {
+        $payload = [
+            'title' => __('Role'),
+            'icon' => 'fa-lock',
+        ];
 
-        $html = array(
-            "title" => $this->_("Role"),
-            "icon" => "fa-lock",
-        );
-
-        $this->_sendHtml($html);
-
+        $this->_sendJson($payload);
     }
 
+    /**
+     * 
+     */
     public function findAction() {
+        $resourcesData = [];
+        if ($this->getRequest()->getParam("role_id")) {
+            $role = (new Acl_Model_Role())
+                ->find($this->getRequest()->getParam("role_id"));
+            
+            $roleResources = (new Acl_Model_Resource())
+                ->findResourcesByRole($this->getRequest()->getParam("role_id"));
 
-        $resources_data = array();
-
-        if($this->getRequest()->getParam("role_id")) {
-
-            $role = new Acl_Model_Role();
-            $role->find($this->getRequest()->getParam("role_id"));
-
-            $resource = new Acl_Model_Resource();
-            $role_resources = $resource->findResourcesByRole($this->getRequest()->getParam("role_id"));
-
-            foreach($role_resources as $role_resource) {
-                $resources_data[] = $role_resource;
+            foreach($roleResources as $roleResource) {
+                $resourcesData[] = $roleResource;
             }
 
-            $data_title = $this->_("Edit %s role", $role->getCode());
-
-            $role = array(
-                "id" => $role->getId(),
-                "code" => $role->getCode(),
-                "label" => $role->getLabel(),
-                "default" => $role->isDefaultRole()
-            );
-
+            $dataTitle = __("Edit %s role", $role->getCode());
+            $role = [
+                'id' => (integer) $role->getId(),
+                'code' => $role->getCode(),
+                'label' => $role->getLabel(),
+                'level' => (integer) $role->getLevel(),
+                'default' => $role->isDefaultRole()
+            ];
         } else {
-            $data_title = $this->_("Create a new role");
-            $role = array(
-                "code" => "",
-                "label" => ""
-            );
+            $dataTitle = __("Create a new role");
+            $role = [
+                'code' => '',
+                'label' => '',
+                'level' => (integer) 99
+            ];
         }
 
-        $data = array(
-            "title" => $data_title,
+        $payload = [
+            "title" => $dataTitle,
             "role" => $role
-        );
+        ];
 
         $resource = new Acl_Model_Resource();
-        $data["resources"] = $resource->getHierarchicalResources($resources_data);
+        $payload['resources'] = $resource->getHierarchicalResources($resourcesData);
 
-        $this->_sendHtml($data);
+        $this->_sendJson($payload);
     }
 
     public function getresourcehierarchicalAction() {

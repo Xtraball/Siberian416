@@ -1,9 +1,10 @@
 <?php
 # First role, Admin
-$data = array(
-    "code"  => "Admin",
-    "label" => "Administrator : full access",
-);
+$data = [
+    'code' => 'Admin',
+    'label' => 'Administrator : full access',
+    'level' => 1,
+];
 
 $acl_role = new Acl_Model_Role();
 $acl_role

@@ -1,40 +1,55 @@
 <?php
 
-class Acl_Backoffice_Role_ListController extends Backoffice_Controller_Default
-{
+/**
+ * Class Acl_Backoffice_Role_ListController
+ */
+class Acl_Backoffice_Role_ListController extends Backoffice_Controller_Default{
 
+    /**
+     *
+     */
     public function loadAction() {
+        $payload = [
+            'title' => __('Roles'),
+            'icon' => 'fa-lock',
+        ];
 
-        $html = array(
-            "title" => $this->_("Roles"),
-            "icon" => "fa-lock",
-        );
-
-        $this->_sendHtml($html);
-
+        $this->_sendJson($payload);
     }
 
+    /**
+     *
+     */
     public function findallAction() {
-        $role = new Acl_Model_Role();
-        $roles = $role->findAll();
+        try {
+            $roles = (new Acl_Model_Role())
+                ->findAll();
 
-        $default_role = $role->findDefaultRoleId();
+            $defaultRole = (new Acl_Model_Role())
+                ->findDefaultRoleId();
 
-        $data = array();
-        foreach($roles as $role) {
-            $is_default_role = false;
-            if($role->getId() == $default_role) {
-                $is_default_role = true;
+            $payload = [];
+            foreach($roles as $role) {
+                $isDefaultRole = false;
+                if ($role->getId() == $defaultRole) {
+                    $isDefaultRole = true;
+                }
+
+                $payload[] = [
+                    'id' => $role->getId(),
+                    'code' => $role->getCode(),
+                    'label' => $role->getLabel(),
+                    'level' => $role->getLevel(),
+                    'default' => $isDefaultRole
+                ];
             }
-
-            $data[] = array(
-                "id" => $role->getId(),
-                "code" => $role->getCode(),
-                "label" => $role->getLabel(),
-                "default" => $is_default_role
-            );
+        } catch(Exception $e) {
+            $payload = [
+                'error' => true,
+                'message' => $e->getMessage()
+            ];
         }
 
-        $this->_sendHtml($data);
+        $this->_sendJson($payload);
     }
 }
