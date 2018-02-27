@@ -4,18 +4,27 @@
                 button="button">
         <br/>
         <div class="form-group">
-            <div class="col-md-5">
+            <div class="col-md-3">
+                <label for="role_parent_id"><?php echo __("Parent"); ?></label>
+            </div>
+            <div class="col-md-4">
                 <label for="role_code"><?php echo __("Code"); ?></label>
             </div>
             <div class="col-md-5">
                 <label for="role_label"><?php echo __("Label"); ?></label>
             </div>
-            <div class="col-md-2">
-                <label for="role_level"><?php echo __("Level"); ?></label>
-            </div>
         </div>
         <div class="form-group">
-            <div class="col-md-5">
+            <div class="col-md-3">
+                <select id="role_parent_id"
+                        class="form-control"
+                        required="required"
+                        ng-model="role.parent_id">
+                    <option ng-repeat="parentRole in parentRoles"
+                            value="{{ parentRole.id }}">{{ parentRole.label }} ({{ parentRole.code }})</option>
+                </select>
+            </div>
+            <div class="col-md-4">
                 <input type="text"
                        id="role_code"
                        class="form-control"
@@ -26,15 +35,6 @@
                        id="role_label"
                        class="form-control"
                        ng-model="role.label"/>
-            </div>
-            <div class="col-md-2">
-                <input type="number"
-                       min="2"
-                       max="9999"
-                       step="1"
-                       id="role_level"
-                       class="form-control"
-                       ng-model="role.level"/>
             </div>
         </div>
 
@@ -52,9 +52,7 @@
         <div class="form-group">
             <div class="col-md-12">
                 <div class="alert alert-info">
-                    <?php echo __("<b>Role hierarchy:</b> a user with a role at level 50 can't assign roles which have a level <=50") ?>
-                    <br />
-                    <?php echo __("Admin level is 1 and default level is 99 for all new/exisiting roles.") ?>
+                    <?php echo __("<b>Role hierarchy:</b> a user with a given Role can only assign child roles.") ?>
                 </div>
             </div>
         </div>

@@ -12,6 +12,14 @@ class Acl_Backoffice_Role_EditController extends Backoffice_Controller_Default {
         $payload = [
             'title' => __('Role'),
             'icon' => 'fa-lock',
+            'words' => [
+                'deleteTitle' => __('A confirmation is required!'),
+                'deleteText' => __("You are about to remove the role %ROLE% and all it's subsequent roles") .
+                    '<br />' .
+                    __("All users using any of the deleted roles will be re-assigned the current <b>default role</b> immediatly."),
+                'confirmDelete' => __('Yes, delete it!'),
+                'cancelDelete' => __('No, go back.'),
+            ],
         ];
 
         $this->_sendJson($payload);
@@ -22,6 +30,19 @@ class Acl_Backoffice_Role_EditController extends Backoffice_Controller_Default {
      */
     public function findAction() {
         $resourcesData = [];
+
+        $parentRoles = (new Acl_Model_Role())
+            ->findAll();
+
+        $parentRolesList = [];
+        foreach ($parentRoles as $parentRole) {
+            $parentRolesList[$parentRole->getId()] = [
+                'id' => $parentRole->getId(),
+                'label' => __($parentRole->getLabel()),
+                'code' => __($parentRole->getCode())
+            ];
+        }
+
         if ($this->getRequest()->getParam("role_id")) {
             $role = (new Acl_Model_Role())
                 ->find($this->getRequest()->getParam("role_id"));
@@ -38,21 +59,25 @@ class Acl_Backoffice_Role_EditController extends Backoffice_Controller_Default {
                 'id' => (integer) $role->getId(),
                 'code' => $role->getCode(),
                 'label' => $role->getLabel(),
-                'level' => (integer) $role->getLevel(),
+                'parent_id' => (integer) $role->getParentId(),
                 'default' => $role->isDefaultRole()
             ];
+
+            // Remove current role from List!
+            unset($parentRolesList[$role['id']]);
         } else {
             $dataTitle = __("Create a new role");
             $role = [
                 'code' => '',
                 'label' => '',
-                'level' => (integer) 99
+                'parent_id' => (integer) 1
             ];
         }
 
         $payload = [
-            "title" => $dataTitle,
-            "role" => $role
+            'title' => $dataTitle,
+            'role' => $role,
+            'parentRoles' => $parentRolesList
         ];
 
         $resource = new Acl_Model_Resource();
@@ -69,66 +94,67 @@ class Acl_Backoffice_Role_EditController extends Backoffice_Controller_Default {
 
     public function saveAction() {
 
-        if($param = Zend_Json::decode($this->getRequest()->getRawBody())) {
+        if ($param = Siberian_Json::decode($this->getRequest()->getRawBody())) {
 
             try {
 
                 $role = new Acl_Model_Role();
-                if(empty($param["role"]) Or !is_array($param["role"])) {
-                    throw new Exception($this->_("An error occurred while saving. Please try again later."));
+                if (empty($param['role']) || !is_array($param['role'])) {
+                    throw new Exception(__("An error occurred while saving. Please try again later."));
                 }
 
-                $role_data = $param["role"];
-                $resources_data = !empty($param["resources"]) ? $param["resources"] : array();
+                $roleData = $param['role'];
+                $resourcesData = !empty($param['resources']) ? $param['resources'] : [];
 
-                if (isset($role_data["id"])) {
-                    $role->find($role_data["id"]);
+                if (isset($roleData['id'])) {
+                    $role->find($roleData['id']);
                 }
 
-                $resource = new Acl_Model_Resource();
-                $resources_data = $resource->flattenedResources($resources_data);
+                $resourcesData = (new Acl_Model_Resource())
+                    ->flattenedResources($resourcesData);
 
-                $role->setResources($resources_data)
-                    ->setLabel($role_data["label"])
-                    ->setCode($role_data["code"])
-                    ->save()
-                ;
+                $role
+                    ->setResources($resourcesData)
+                    ->setLabel($roleData['label'])
+                    ->setParentId($roleData['parent_id'])
+                    ->setCode($roleData['code'])
+                    ->save();
 
-                $config = new System_Model_Config();
-                $config->find(Acl_Model_Role::DEFAULT_ADMIN_ROLE_CODE, "code");
-                $default_role_id = $config->getValue();
-                $new_default_role_id = null;
+                $config = (new System_Model_Config())
+                    ->find(Acl_Model_Role::DEFAULT_ADMIN_ROLE_CODE, 'code');
+                $defaultRoleId = $config->getValue();
+                $newDefaultRoleId = null;
                 
-                if($default_role_id == $role->getId() AND !$role_data["default"]) {
-                    $new_default_role_id = Acl_Model_Role::DEFAULT_ROLE_ID;
-                } else if($role_data["default"]) {
+                if ($defaultRoleId === $role->getId() && !$roleData['default']) {
+                    $newDefaultRoleId = Acl_Model_Role::DEFAULT_ROLE_ID;
+                } else if($roleData['default']) {
                     if (__getConfig('is_demo')) {
                         // Demo version
                         throw new Siberian_Exception(__("This is a demo version, you are not allowed to change the default role."));
                     }
 
-                    $new_default_role_id = $role->getId();
+                    $newDefaultRoleId = $role->getId();
                 }
 
-                if(!empty($new_default_role_id)) {
-                    $config->setValue($new_default_role_id)
-                        ->save()
-                    ;
+                if (!empty($newDefaultRoleId)) {
+                    $config
+                        ->setValue($newDefaultRoleId)
+                        ->save();
                 }
 
-                $data = array(
-                    "success" => true,
-                    "message" => $this->_("Your role has been successfully saved")
-                );
+                $payload = [
+                    'success' => true,
+                    'message' => __("Your role has been successfully saved")
+                ];
 
             } catch(Exception $e) {
-                $data = array(
-                    "error" => true,
-                    "message" => $e->getMessage()
-                );
+                $payload = [
+                    'error' => true,
+                    'message' => $e->getMessage()
+                ];
             }
 
-            $this->_sendHtml($data);
+            $this->_sendJson($payload);
 
         }
     }

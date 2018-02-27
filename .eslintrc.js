@@ -37,11 +37,13 @@ module.exports = {
         "IS_NATIVE_APP": true,
         "DEVICE_TYPE": true,
         "LOGIN_FB": true,
+        "BASE_URL": true,
         "Swiper": true,
         "fbtoken": true,
         "language": true,
         "lazyLoadResolver": true,
         "isOverview": true,
+        "App": true,
         "_": true
     },
     "extends": "eslint:recommended",
