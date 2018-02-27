@@ -20,11 +20,12 @@ function generateRecursive($content, $parentId, $parentRolesList) {
         $roles = $parentRolesList[$parentId];
         foreach ($roles as $role) {
             $content .= '
-            <li class="role">
+            <li class="role"
+                roleid="' . $role['role_id'] . '">
                 <span>
                     <span class="role-label"><b>' . $role['role_id'] . '&nbsp;-&nbsp;</b>' . $role['label'] . ' (' . $role['code'] . ')</span>
                     <a href="#" 
-                       class="pull-right">
+                       class="delete-role pull-right">
                         <i class="folder-delete fa fa-remove" 
                        ng-click="deleteRole(' . $role['role_id'] . ')"></i>
                     </a>
@@ -64,16 +65,7 @@ $outputHtml = generateRecursive('', $rootRole['role_id'], $parentRolesList);
         filter-list="filter">
         <li class="role">
             <span>
-                <span class="role-label"><b><?php echo $rootRole['role_id']; ?>&nbsp;-&nbsp;</b><?php echo $rootRole['label']; ?> (<?php echo $rootRole['code']; ?> )</span>
-                <a href="#"
-                   class="pull-right">
-                    <i class="folder-delete fa fa-remove"
-                       ng-click="deleteRole(<?php echo $rootRole['role_id']; ?>)"></i>
-                </a>
-                <a href="<?php echo $this->getUrl("acl/backoffice_role_edit", ['role_id' => $rootRole['role_id']]); ?>"
-                   class="delete-role pull-right">
-                    <i class="folder-edit fa fa-pencil"></i>
-                </a>
+                <span class="role-label"><b><?php echo $rootRole['role_id']; ?>&nbsp;-&nbsp;</b><?php echo $rootRole['label']; ?> (<?php echo $rootRole['code']; ?>)</span>
             </span>
         </li>
         <ul>

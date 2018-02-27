@@ -7,11 +7,11 @@
             <div class="col-md-3">
                 <label for="role_parent_id"><?php echo __("Parent"); ?></label>
             </div>
-            <div class="col-md-4">
-                <label for="role_code"><?php echo __("Code"); ?></label>
-            </div>
             <div class="col-md-5">
                 <label for="role_label"><?php echo __("Label"); ?></label>
+            </div>
+            <div class="col-md-4">
+                <label for="role_code"><?php echo __("Code"); ?></label>
             </div>
         </div>
         <div class="form-group">
@@ -24,17 +24,17 @@
                             value="{{ parentRole.id }}">{{ parentRole.label }} ({{ parentRole.code }})</option>
                 </select>
             </div>
-            <div class="col-md-4">
-                <input type="text"
-                       id="role_code"
-                       class="form-control"
-                       ng-model="role.code"/>
-            </div>
             <div class="col-md-5">
                 <input type="text"
                        id="role_label"
                        class="form-control"
                        ng-model="role.label"/>
+            </div>
+            <div class="col-md-4">
+                <input type="text"
+                       id="role_code"
+                       class="form-control"
+                       ng-model="role.code"/>
             </div>
         </div>
 

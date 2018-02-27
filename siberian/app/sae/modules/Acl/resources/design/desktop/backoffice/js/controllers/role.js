@@ -4,17 +4,20 @@
 App.config(function ($routeProvider) {
     $routeProvider.when(BASE_URL + '/acl/backoffice_role_list', {
         controller: 'RoleListController',
-        templateUrl: BASE_URL + '/acl/backoffice_role_list/template'
+        templateUrl: BASE_URL + '/acl/backoffice_role_list/template',
+        cache: false
     }).when(BASE_URL + '/acl/backoffice_role_edit/role_id/:role_id', {
         controller: 'RoleEditController',
         templateUrl: BASE_URL + '/acl/backoffice_role_edit/template',
-        code: 'role-edit'
+        code: 'role-edit',
+        cache: false
     }).when(BASE_URL + '/acl/backoffice_role_edit', {
         controller: 'RoleEditController',
         templateUrl: BASE_URL + '/acl/backoffice_role_edit/template',
-        code: 'role-edit'
+        code: 'role-edit',
+        cache: false
     });
-}).controller('RoleListController', function ($scope, $location, Header, SectionButton, Role) {
+}).controller('RoleListController', function ($scope, $location, $route, Header, SectionButton, Role) {
     $scope.header = new Header();
     $scope.header.button.left.is_visible = false;
     $scope.content_loader_is_visible = true;
@@ -36,10 +39,14 @@ App.config(function ($routeProvider) {
     });
 
     $scope.deleteRole = function (roleId) {
+        var foundRole = $scope.roles.find(function (role) {
+            return role.id == roleId;
+        });
+
         swal({
             html: true,
             title: $scope.words.deleteTitle,
-            text: $scope.words.deleteText,
+            text: $scope.words.deleteText.replace('#ROLE#', '<b>' + foundRole.label + '</b>'),
             showCancelButton: true,
             confirmButtonColor: '#ff3a2e',
             confirmButtonText: $scope.words.confirmDelete,
@@ -57,12 +64,13 @@ App.config(function ($routeProvider) {
                         $scope.roles = findData;
                     }).finally(function () {
                         $scope.content_loader_is_visible = false;
+                        document.querySelector('li[roleid="' + roleId + '"]').remove();
                     });
                 });
         });
     };
 
-}).controller('RoleEditController', function ($scope, $location, $routeParams, $window, Header, Role, Url) {
+}).controller('RoleEditController', function ($scope, $location, $routeParams, $cacheFactory, $window, Header, Role, Url) {
     if ($routeParams.role_id === 1) {
         $location.path(Url.get('acl/backoffice_role_list'));
     } else {
@@ -94,6 +102,8 @@ App.config(function ($routeProvider) {
         });
 
         $scope.save = function () {
+            $cacheFactory.get('templates').remove(BASE_URL + '/acl/backoffice_role_list/template');
+
             if (!$scope.role.parent_id) {
                 swal('Error', 'A parent is required!');
                 return false;
