@@ -7,6 +7,8 @@
  * @author Xtraball SAS <dev@xtraball.com>
  */
 
+echo 'my test';
+
 global $_config;
 
 if (!file_exists('./config.php')) {
