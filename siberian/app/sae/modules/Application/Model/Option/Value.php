@@ -7,10 +7,18 @@
  * used to save per-app options/features
  *
  * @method integer getId()
+ * @method integer getValueId()
+ * @method getRequest()
+ * @method $this setTabbarName(string $tabbarName)
+ * @method Application_Model_Option_Value[] findAll($values = [], $order = null, $params = [])
+ * @method $this setFolderId(integer $folderId)
+ * @method $this setFolderCategoryId(integer $folderCategoryId)
+ * @method $this setFolderCategoryPosition(integer $folderCategoryPosition)
+ * @method integer getFolderCategoryId()
+ * @method integer getOptionId()
  *
  */
-class Application_Model_Option_Value extends Application_Model_Option
-{
+class Application_Model_Option_Value extends Application_Model_Option {
 
     protected $_design_colors = array(
         "angular" => "#FFFFFF", // Fallback value
@@ -41,6 +49,66 @@ class Application_Model_Option_Value extends Application_Model_Option
         }
 
         return $this->_icon_url;
+    }
+
+    /**
+     * Extended static version of the colorizable icon url helper
+     * seen in Application_View_Customization_Features_List_Options
+     * but way more portable
+     *
+     * @param Application_Model_Option_Value $option
+     * @return string
+     */
+    public static function sGetIconUrl($option) {
+        $application = (new Application_Model_Application())
+            ->find($option->getAppId());
+        $iconId = null;
+        switch ($option->getOptionId()) {
+            case 'customer_account':
+                if ($application->getAccountIconId()) {
+                    $image = (new Media_Model_Library_Image())
+                        ->find($application->getAccountIconId());
+                    $iconId = $image->getId();
+                    $colorizable = $image->getCanBeColorized();
+
+                    break;
+                }
+            case 'more_items':
+                if ($application->getMoreIconId()) {
+                    $image = (new Media_Model_Library_Image())
+                        ->find($application->getMoreIconId());
+                    $iconId = $image->getId();
+                    $colorizable = $image->getCanBeColorized();
+
+                    break;
+                }
+            default:
+                $colorizable = (!$option->getImage()->getId() || $option->getImage()->getCanBeColorized());
+                $iconId = $option->getIconUrl() ? $option->getIconUrl() : $option->getIconId();
+        }
+
+        $iconUrl = $iconId;
+        if ($colorizable) {
+            $iconColor = "#FFFFFF";
+            if (Siberian_Version::is('pe')) {
+                $iconColor = Core_View_Default_Abstract::sGetBlock('area')->getColor();
+            }
+
+            $iconUrl = Core_Controller_Default_Abstract::sGetColorizedImage($iconId, $iconColor);
+        }
+
+        return $iconUrl;
+    }
+
+    protected function _initIconColor() {
+
+        $this->_icon_color = "#FFFFFF";
+        if(Siberian_Version::is('PE')) {
+            $this->_icon_color = $this->getBlock("area")->getColor();
+        }
+
+        return $this;
+
     }
 
     public function __construct($datas = array()) {
@@ -507,6 +575,26 @@ class Application_Model_Option_Value extends Application_Model_Option
     }
 
     /**
+     * This method will extract any features that were inside a deleted folder!
+     *
+     * @param $valueId
+     */
+    public static function extractFromFolder ($valueId) {
+        $features = (new self)
+            ->findAll([
+                'folder_id = ?' =>  $valueId
+            ]);
+
+        foreach ($features as $feature) {
+            $feature
+                ->setFolderId(null)
+                ->setFolderCategoryId(null)
+                ->setFolderCategoryPosition(null)
+                ->save();
+        }
+    }
+
+    /**
      * @param $path
      * @throws Exception
      */
@@ -534,7 +622,7 @@ class Application_Model_Option_Value extends Application_Model_Option
     public function forYaml() {
         $data = $this->getData();
 
-        if($this->getBackground()) {
+        if ($this->getBackground()) {
             $data["background"] = $this->_getBackground();
         }
 

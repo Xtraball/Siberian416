@@ -219,7 +219,7 @@ var App = angular.module('starter', ['ionic', 'lodash', 'ngRoute', 'ngCordova', 
         $rootScope.isNotAvailableInOverview = function () {
             if (isOverview) {
                 Dialog.alert('Overview',
-                    'This feature is disabled in the overview', 'Dismiss', -1);
+                    'This feature is disabled in this preview', 'Dismiss', -1);
 
                 return true;
             }
@@ -757,11 +757,6 @@ var App = angular.module('starter', ['ionic', 'lodash', 'ngRoute', 'ngCordova', 
 
                         var ProgressbarService = $injector.get('ProgressbarService');
                         ProgressbarService.init(load.application.colors.loader);
-
-                        // Delay background location!
-                        $timeout(function () {
-                            PushService.startBackgroundGeolocation();
-                        }, 5000);
 
                         $log.debug((new Date()).getTime(), 'end.');
 

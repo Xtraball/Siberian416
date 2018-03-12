@@ -1,3 +1,6 @@
+/*globals
+ ckeditor_available_lang: true, ckeditor_language: true, datepicker_regional, ckeditor_config: true, Uploader
+ */
 
 // Handle every elements for Forms on the Fly!
 ckeditor_available_lang = ['af', 'ar', 'az', 'bg', 'bn', 'bs', 'ca', 'cs', 'cy', 'da', 'de-ch', 'de', 'el', 'en-au', 'en-ca', 'en-gb', 'en', 'eo', 'es', 'et', 'eu', 'fa', 'fi', 'fo', 'fr-ca', 'fr', 'gl', 'gu', 'he', 'hi', 'hr', 'hu', 'id', 'is', 'it', 'ja', 'ka', 'km', 'ko', 'ku', 'lt', 'lv', 'mk', 'mn', 'ms', 'nb', 'nl', 'no', 'oc', 'pl', 'pt-br', 'pt', 'ro', 'ru', 'si', 'sk', 'sl', 'sq', 'sr-latn', 'sr', 'sv', 'th', 'tr', 'tt', 'ug', 'uk', 'vi', 'zh-cn', 'zh'];
@@ -404,7 +407,7 @@ var _bindForms = function (default_parent, color, success_cb, error_cb) {
                     feature_picture_uploader.hide();
 
                     var params = [];
-                    params.url = '/template/crop/crop';
+                    params.url = '/template/crop/cropv2';
                     params.file = data.result.files;
                     params.output_w = width;
                     params.output_h = height;
@@ -479,8 +482,14 @@ var _bindForms = function (default_parent, color, success_cb, error_cb) {
                     } else if (form.hasClass('onchange')) {
                         /** Do nothing */
                     } else if (form.hasClass('callback')) {
-                        var callback = el.data('callback');
-                        if (typeof callback !== 'undefined') {
+                        var callback = form.data('callback');
+                        if (typeof callback === 'function') {
+                            try {
+                                callback(data);
+                            } catch (e) {
+                                console.log('unable to execute callback ' + callback);
+                            }
+                        } else if (typeof callback !== 'undefined') {
                             try {
                                 eval(callback);
                             } catch (e) {
@@ -755,7 +764,6 @@ var initSearch = function (input, clear, empty, itemsClass, fnCallback) {
         });
 
         if (typeof self.fnCallback === 'function') {
-            console.log(self.fnCallback);
             setTimeout(self.fnCallback(), 100);
         }
 

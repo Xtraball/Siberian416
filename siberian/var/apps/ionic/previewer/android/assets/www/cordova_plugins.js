@@ -254,6 +254,28 @@ module.exports = [
         "runs": true
     },
     {
+        "id": "es6-promise-plugin.Promise",
+        "file": "plugins/es6-promise-plugin/www/promise.js",
+        "pluginId": "es6-promise-plugin",
+        "runs": true
+    },
+    {
+        "id": "cordova-plugin-geofence.TransitionType",
+        "file": "plugins/cordova-plugin-geofence/www/TransitionType.js",
+        "pluginId": "cordova-plugin-geofence",
+        "clobbers": [
+            "TransitionType"
+        ]
+    },
+    {
+        "id": "cordova-plugin-geofence.geofence",
+        "file": "plugins/cordova-plugin-geofence/www/geofence.js",
+        "pluginId": "cordova-plugin-geofence",
+        "clobbers": [
+            "geofence"
+        ]
+    },
+    {
         "id": "cordova-plugin-geolocation.geolocation",
         "file": "plugins/cordova-plugin-geolocation/www/android/geolocation.js",
         "pluginId": "cordova-plugin-geolocation",
@@ -370,18 +392,19 @@ module.exports.metadata =
     "cordova-plugin-camera": "2.3.1-dev",
     "com.verso.cordova.clipboard": "0.1.0",
     "cordova-plugin-device": "1.1.6-dev",
-    "cordova-plugin-extension": "1.3.0",
     "cordova-plugin-file": "4.3.3-dev",
+    "es6-promise-plugin": "4.2.2",
+    "cordova-plugin-geofence": "0.6.0",
     "cordova-plugin-geolocation": "2.1.0",
     "cordova-plugin-inappbrowser": "1.7.1-dev",
     "ionic-plugin-keyboard": "2.2.1",
     "cordova-plugin-x-socialsharing": "5.0.12-dev",
-    "cordova-plugin-statusbar": "2.2.0",
+    "cordova-plugin-statusbar": "2.4.1",
     "cordova-plugin-whitelist": "1.2.1",
     "de.appplant.cordova.plugin.local-notification": "0.8.4.1",
     "siberian-plugin-offlinemode": "1.0.0",
     "cordova-plugin-insomnia": "4.2.0",
-    "cordova-plugin-music-controls": "1.4.1",
+    "cordova-plugin-music-controls": "2.1.4",
     "siberian": "1.0.0"
 };
 // BOTTOM OF METADATA

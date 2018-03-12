@@ -12,9 +12,6 @@
         <param name="android-package" value="org.apache.cordova.splashscreen.SplashScreen" />
         <param name="onload" value="true" />
     </feature>
-    <feature name="BackgroundGeoloc">
-        <param name="android-package" value="com.appsmobilecompany.base.CDVBackgroundGeoloc" />
-    </feature>
     <feature name="PushNotification">
         <param name="android-package" value="com.adobe.phonegap.push.PushPlugin" />
     </feature>
@@ -72,6 +69,9 @@
     <feature name="MusicControls">
         <param name="android-package" value="com.homerours.musiccontrols.MusicControls" />
     </feature>
+    <feature name="GeofencePlugin">
+        <param name="android-package" value="com.cowbell.cordova.geofence.GeofencePlugin" />
+    </feature>
     <name>AppsMobileCompany</name>
     <description>Apps Mobile Company app source code</description>
     <author>Apps Mobile Company Dev Team</author>
@@ -88,7 +88,7 @@
     <allow-intent href="sms:*" />
     <chcp>
         <config-file url="PLATFORM_URL" />
-        <native-interface version="4" />
+        <native-interface version="5" />
         <auto-download enabled="false" />
         <auto-install enabled="false" />
     </chcp>

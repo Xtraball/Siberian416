@@ -3,9 +3,12 @@
 /**
  * Class Application_Model_Application_Abstract
  *
+ * @version 4.12.22
+ *
  * @method integer getId()
  * @method string getFlickrKey()
  * @method string getFlickrSecret()
+ * @method string getDesignCode()
  */
 abstract class Application_Model_Application_Abstract extends Core_Model_Default {
 
@@ -204,23 +207,29 @@ abstract class Application_Model_Application_Abstract extends Core_Model_Default
     }
 
     /**
-     * @param $device_id
+     * @param $deviceId
      * @return Application_Model_Device_Ionic_Android|Application_Model_Device_Ionic_Ios
      */
-    public function  getDevice($device_id) {
-
-        if(empty($this->_devices[$device_id])) {
+    public function getDevice($deviceId) {
+        if (empty($this->_devices[$deviceId])) {
             $device = new Application_Model_Device();
-            $device->find(array("app_id" => $this->getId(), "type_id" => $device_id));
-            if(!$device->getId()) {
-                $device->loadDefault($device_id);
+            $device->find([
+                'app_id' => $this->getId(),
+                'type_id' => $deviceId
+            ]);
+            if (!$device->getId()) {
+                $device->loadDefault($deviceId);
                 $device->setAppId($this->getId());
+                // Save newly created device!
+                $device->save();
+                // Fetch it again (for MySQL defaults)
+                $device->find($device->getId());
             }
             $device->setDesignCode($this->getDesignCode());
-            $this->_devices[$device_id] = $device;
+            $this->_devices[$deviceId] = $device;
         }
 
-        return $this->_devices[$device_id];
+        return $this->_devices[$deviceId];
 
     }
 
@@ -1350,5 +1359,111 @@ abstract class Application_Model_Application_Abstract extends Core_Model_Default
         $dataset = Siberian_Yaml::encode($dataset);
 
         return $dataset;
+    }
+
+    /**
+     * This action will completely wipe the Application & all it's content & resources!
+     */
+    public function wipe() {
+        $appId = $this->getId();
+
+        // 1. Pre-check PE!
+        if (Siberian_Version::is('PE')) {
+            $salesInvoices = (new Sales_Model_Invoice())
+                ->findAllv2([
+                    'si.app_id = ?' => $appId
+                ]);
+
+            if ($salesInvoices->count() > 0) {
+                throw new Siberian_Exception(__('This Application has some invoices associated, you can not delete it!'));
+            }
+        }
+
+        // 1.1. Check for any M-Commerce invoices
+        $mcommerceOption = (new Application_Model_Option())
+            ->find([
+                'code' => 'm_commerce'
+            ]);
+        if ($mcommerceOption->getId()) {
+            $optionValue = (new Application_Model_Option_Value())
+                ->find([
+                    'option_id' => $mcommerceOption->getId(),
+                    'app_id' => $appId
+                ]);
+            if ($optionValue->getId()) {
+                $mcommerce = (new Mcommerce_Model_Mcommerce())
+                    ->find([
+                        'value_id' => $optionValue->getId()
+                    ]);
+                if ($mcommerce->getId()) {
+                    $mcommerceOrder = (new Mcommerce_Model_Order())
+                        ->findAll([
+                            'mcommerce_id = ?' => $mcommerce->getId()
+                        ]);
+                    if ($mcommerceOrder->count() > 0) {
+                        throw new Siberian_Exception(__('This Application has some M-Commerce invoices associated, you can not delete it!'));
+                    }
+                }
+            }
+        }
+
+        // 2. Find the resources folder.
+        if (strlen($appId) <= 0) {
+            throw new Siberian_Exception(__('Seems the appId is empty or invalid, aborting!'));
+        }
+
+        $pathToImages = Core_Model_Directory::getBasePathTo('/images/application/' . $appId . '/');
+        if (strrpos($pathToImages, '//') === 0) {
+            throw new Siberian_Exception(__('Seems the computed path could delete unwanted content, aborting!<br />' . $pathToImages));
+        }
+
+        $absolutePath = realpath($pathToImages);
+        $applicationAbsolutePath = realpath(Core_Model_Directory::getBasePathTo('/images/application'));
+        if ($absolutePath === $applicationAbsolutePath) {
+            throw new Siberian_Exception(__('Seems we could delete unwanted files, aborting!'));
+        }
+
+        if (is_dir($pathToImages)) {
+            // 2.1. Secure any white space
+            $pathToImagesSafe = preg_replace("#\s+#i", '', $pathToImages);
+
+            if (!empty($pathToImagesSafe)) {
+                // 2.2. Then the folder itself
+                exec('rm -rf "' . $pathToImagesSafe . '"');
+            }
+        }
+
+        // 3. Delete all related media images (we do it first manually to ensure it's clean because there is no cascade here)
+        $mediaLibraryImages = (new Media_Model_Library_Image())
+            ->findAll([
+                'app_id = ?' => $appId
+            ]);
+        foreach ($mediaLibraryImages as $mediaLibraryImage) {
+            $path = Core_Model_Directory::getBasePathTo($mediaLibraryImage->getData('link'));
+            if (is_file($path)) {
+                unlink($path);
+            }
+            $mediaLibraryImage->delete();
+        }
+
+        // 4. Delete customers
+        $customers = (new Customer_Model_Customer())
+            ->findAll([
+                'app_id = ?' => $appId
+            ]);
+
+        foreach ($customers as $customer) {
+            $image = $customer->getData('image');
+            if (!empty($image)) {
+                $imagePath = Core_Model_Directory::getBasePathTo('/images/customer' . $image);
+                if (is_file($imagePath)) {
+                    unlink($imagePath);
+                }
+            }
+            $customer->delete();
+        }
+
+        // 5. Delete the Application itself
+        $this->delete();
     }
 }

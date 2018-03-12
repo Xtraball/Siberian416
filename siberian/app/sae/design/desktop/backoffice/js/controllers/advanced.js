@@ -36,18 +36,18 @@ App.config(function($routeProvider) {
         $scope.modules = data.modules;
         $scope.core_modules = data.core_modules;
         $scope.layouts = data.layouts;
+        $scope.features = data.features;
         $scope.icons = data.icons;
     }).finally(function() {
         $scope.content_loader_is_visible = false;
     });
 
-    $scope.moduleAction = function(module, action) {
+    $scope.moduleAction = function (module, action) {
         $scope.form_loader_is_visible = true;
 
-        Advanced.moduleAction(module, action).success(function(data) {
-
-            var message = "";
-            if(angular.isObject(data) && angular.isDefined(data.message)) {
+        Advanced.moduleAction(module, action).success(function (data) {
+            var message = '';
+            if (angular.isObject(data) && angular.isDefined(data.message)) {
                 message = data.message;
                 $scope.message.isError(false);
             }
@@ -55,9 +55,9 @@ App.config(function($routeProvider) {
             $scope.message.setText(message)
                 .show()
             ;
-        }).error(function(data) {
-            var message = "";
-            if(angular.isObject(data) && angular.isDefined(data.message)) {
+        }).error(function (data) {
+            var message = '';
+            if (angular.isObject(data) && angular.isDefined(data.message)) {
                 message = data.message;
             }
 
@@ -65,14 +65,44 @@ App.config(function($routeProvider) {
                 .isError(true)
                 .show()
             ;
-        }).finally(function() {
+        }).finally(function () {
             $scope.form_loader_is_visible = false;
         });
     };
 
+    $scope.toggleFeature = function (feature) {
+        $scope.form_loader_is_visible = true;
+        Advanced
+            .toggleFeature(feature.id, feature.is_enabled)
+            .success(function (data) {
+                var message = '';
+                if (angular.isObject(data) && angular.isDefined(data.message)) {
+                    message = data.message;
+                    $scope.message.isError(false);
+                }
+
+                $scope.message.setText(message)
+                    .show()
+                ;
+            }).error(function (data) {
+                var message = '';
+                if (angular.isObject(data) && angular.isDefined(data.message)) {
+                    message = data.message;
+                }
+
+                $scope.message.setText(message)
+                    .isError(true)
+                    .show()
+                ;
+            }).finally(function () {
+                $scope.form_loader_is_visible = false;
+            });
+    };
 
 
-}).controller("BackofficeAdvancedConfigurationController", function($log, $http, $scope, $timeout, $interval, $window, Label, Header, AdvancedConfiguration, FileUploader, Url) {
+}).controller("BackofficeAdvancedConfigurationController", function($log, $http, $scope, $timeout, $interval, $window,
+                                                                    Label, Header, AdvancedConfiguration, FileUploader,
+                                                                    Url, AdvancedTools) {
 
     $scope.header = new Header();
     $scope.header.button.left.is_visible = false;
@@ -601,11 +631,36 @@ App.config(function($routeProvider) {
                     .show()
                 ;
 
-            }).finally(function() {
+            }).finally(function () {
                 $scope.form_loader_is_visible = false;
             });
         }
-    }
+    };
+
+    $scope.migrate_sessions = function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!window.confirm('You are about to migrate all MySQL to the configured Redis server, all existing sessions in Redis will be replaced, are you sure ?')) {
+            return;
+        }
+        $scope.content_loader_is_visible = true;
+        AdvancedTools.migrateSessions()
+            .success(function (data) {
+                $scope.message.setText(data.message)
+                    .isError(false)
+                    .show();
+            })
+            .error(function (errorData) {
+                $scope.message
+                    .setText(errorData.message)
+                    .isError(true)
+                    .show();
+                $scope.content_loader_is_visible = false;
+            })
+            .finally(function () {
+                $scope.content_loader_is_visible = false;
+            });
+    };
 
 
 
@@ -657,6 +712,29 @@ App.config(function($routeProvider) {
                 $scope.message
                     .setText(errorData.message)
                     .isError(false)
+                    .show();
+                $scope.content_loader_is_visible = false;
+            })
+            .finally(function () {
+                $scope.content_loader_is_visible = false;
+            });
+    };
+
+    $scope.migrate_sessions = function () {
+        if (!window.confirm('You are about to migrate all MySQL to the configured Redis server, all existing sessions in Redis will be replaced, are you sure ?')) {
+            return;
+        }
+        $scope.content_loader_is_visible = true;
+        AdvancedTools.migrateSessions()
+            .success(function (data) {
+                $scope.message.setText(data.message)
+                    .isError(false)
+                    .show();
+            })
+            .error(function (errorData) {
+                $scope.message
+                    .setText(errorData.message)
+                    .isError(true)
                     .show();
                 $scope.content_loader_is_visible = false;
             })

@@ -93,7 +93,70 @@ class Translation_Backoffice_EditController extends Backoffice_Controller_Defaul
         $data["info"] = array_merge($data_csv["info"], $data_xml["info"]);
 
         $this->_sendHtml($data);
+    }
 
+    public function migrateAction() {
+        try {
+            $data = $data_csv = $data_all = [];
+
+            $locale = Zend_Registry::get('Zend_Locale');
+            $languages = $locale->getTranslationList('language');
+            $existing_languages = Core_Model_Language::getLanguageCodes();
+            foreach($languages as $k => $language) {
+                if(!$locale->isLocale($k) OR in_array($k, $existing_languages)) {
+                    unset($languages[$k]);
+                }
+            }
+
+            asort($languages, SORT_LOCALE_STRING);
+            $data['country_codes'] = $languages;
+
+            foreach ($existing_languages as $langId) {
+                $data_csv = $this->_parseCsv($langId);
+                $data_xml = $this->_parseXml($langId);
+
+                $data_all['translation_files'] = array_merge($data_csv['translation_files'], $data_xml['translation_files']);
+                $data_all['translation_files_data'] = array_merge($data_csv['translation_files_data'], $data_xml['translation_files_data']);
+
+                ksort($data_all['translation_files']);
+                $data['translation_files'] = $data_all['translation_files'];
+                ksort($data_all['translation_files_data']);
+                $data['translation_files_data'] = $data_all['translation_files_data'];
+
+                foreach ($data['translation_files_data'] as $fileName => $translations) {
+                    foreach ($translations as $source => $value) {
+                        $translation = (new Translation_Model_TranslationApp())
+                            ->find([
+                                'filename' => $fileName,
+                                'target' => $langId,
+                                'source' => $source
+                            ]);
+
+                        // Upsert!
+                        $translation
+                            ->setFilename($fileName)
+                            ->setOrigin('en')
+                            ->setTarget($langId)
+                            ->setSource($source)
+                            ->setValue($value)
+                            ->save();
+                    }
+                }
+            }
+
+            $payload = [
+                'success' => true,
+                'message' => __('Migration done!')
+            ];
+
+        } catch(Exception $e) {
+            $payload = [
+                'error' => true,
+                'message' => __('An unknown error occurred, please try again later.')
+            ];
+        }
+
+        $this->_sendJson($payload);
     }
 
     public function saveAction() {
@@ -101,6 +164,11 @@ class Translation_Backoffice_EditController extends Backoffice_Controller_Defaul
         if($data = Zend_Json::decode($this->getRequest()->getRawBody())) {
 
             try {
+
+                if (__getConfig('is_demo')) {
+                    // Demo version
+                    throw new Exception(__("You cannot change translation, it's a demo version."));
+                }
 
                 $base_path = Core_Model_Directory::getBasePathTo("languages/");
                 $country_code = $data["country_code"];

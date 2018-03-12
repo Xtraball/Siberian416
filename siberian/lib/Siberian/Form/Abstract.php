@@ -39,6 +39,22 @@ abstract class Siberian_Form_Abstract extends Zend_Form {
      */
     public $confirm_text = "";
 
+    /**
+     * @param $float
+     * @return float|int
+     */
+    public function getUnit ($float) {
+        $floatingPoint = strlen(substr(strrchr($float, '.'), 1));
+        if ($floatingPoint === 0) {
+            return 1;
+        }
+        $multiplier = pow(10, $floatingPoint);
+        $divider = $float * $multiplier;
+        $unit = $float / $divider;
+
+        return $unit;
+    }
+
     public function init() {
         parent::init();
 
@@ -235,12 +251,18 @@ abstract class Siberian_Form_Abstract extends Zend_Form {
      * @return Siberian_Form_Element_Text
      * @throws Zend_Form_Exception
      */
-    public function addSimpleText($name, $label = "", $placeholder = false) {
+    public function addSimpleText($name, $label = "", $placeholder = false, $placeholderText = false) {
         $el = new Siberian_Form_Element_Text($name);
         $this->addElement($el);
         if ($placeholder) {
-            $el->setAttrib('placeholder', $label);
-            $el->setDecorators(array('ViewHelper'));
+            if ($placeholderText === false) {
+                $el->setAttrib('placeholder', $label);
+                $el->setDecorators(array('ViewHelper'));
+            } else {
+                $el->setLabel($label);
+                $el->setAttrib('placeholder', $placeholder);
+                $el->setDecorators(array('ViewHelper', 'Label'));
+            }
         } else {
             $el->setLabel($label);
             $el->setDecorators(array('ViewHelper', 'Label'));
@@ -249,7 +271,8 @@ abstract class Siberian_Form_Abstract extends Zend_Form {
         $el->setColor($this->color);
         $el->setNewDesign();
 
-        return $el;}
+        return $el;
+    }
 
 
     /**
@@ -633,27 +656,39 @@ abstract class Siberian_Form_Abstract extends Zend_Form {
         return $button;
     }
 
-    public function addSimpleNumber($name, $label, $min = null, $max = null, $inclusive = true, $step = "any") {
+    /**
+     * @todo fix inclusive & step values, this was made only for integers ...
+     *
+     * @param $name
+     * @param $label
+     * @param null $min
+     * @param null $max
+     * @param bool $inclusive
+     * @param string $step
+     * @return Siberian_Form_Element_Number
+     */
+    public function addSimpleNumber($name, $label, $min = null, $max = null, $inclusive = true, $step = 'any') {
         $el = new Siberian_Form_Element_Number($name);
         $this->addElement($el);
         $el->setIsFormHorizontal($this->is_form_horizontal);
         $el->setColor($this->color);
         $el->setDecorators(array('ViewHelper', 'Label'))
             ->setLabel($label)
-            ->setNewDesign()
-            ;
+            ->setNewDesign();
 
-        if(is_numeric($min)) {
-            if(!$inclusive)
-                $min++;
+        if (is_numeric($min)) {
+            if ($inclusive) {
+                $min = $min - $this->getUnit($min);
+            }
 
-            $el->setAttrib("min", $min);
+            $el->setAttrib('min', $min);
             $el->addValidator(new Zend_Validate_GreaterThan($min));
         }
 
-        if(is_numeric($max)) {
-            if(!$inclusive)
-                $max++;
+        if (is_numeric($max)) {
+            if ($inclusive) {
+                $max = $max + $this->getUnit($max);
+            }
 
             $el->setAttrib("max", $max);
             $el->addValidator(new Zend_Validate_LessThan($max));

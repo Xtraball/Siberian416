@@ -36,23 +36,23 @@ abstract class Application_Model_Device_Ionic_Ios_Abstract extends Application_M
 
         // Touch Icon
         $icons = array(
-            $this->_dest_source_res.'/Images.xcassets/AppIcon.appiconset/icon-small.png'     => $application->getIcon(29, null, true),
-            $this->_dest_source_res.'/Images.xcassets/AppIcon.appiconset/icon-small@2x.png'  => $application->getIcon(58, null, true),
-            $this->_dest_source_res.'/Images.xcassets/AppIcon.appiconset/icon.png'           => $application->getIcon(57, null, true),
-            $this->_dest_source_res.'/Images.xcassets/AppIcon.appiconset/icon@2x.png'        => $application->getIcon(114, null, true),
-            $this->_dest_source_res.'/Images.xcassets/AppIcon.appiconset/icon-40.png'        => $application->getIcon(40, null, true),
-            $this->_dest_source_res.'/Images.xcassets/AppIcon.appiconset/icon-40@2x.png'     => $application->getIcon(80, null, true),
-            $this->_dest_source_res.'/Images.xcassets/AppIcon.appiconset/icon-50.png'        => $application->getIcon(50, null, true),
-            $this->_dest_source_res.'/Images.xcassets/AppIcon.appiconset/icon-50@2x.png'     => $application->getIcon(100, null, true),
-            $this->_dest_source_res.'/Images.xcassets/AppIcon.appiconset/icon-60.png'        => $application->getIcon(60, null, true),
-            $this->_dest_source_res.'/Images.xcassets/AppIcon.appiconset/icon-60@2x.png'     => $application->getIcon(120, null, true),
-            $this->_dest_source_res.'/Images.xcassets/AppIcon.appiconset/icon-60@3x.png'     => $application->getIcon(180, null, true),
-            $this->_dest_source_res.'/Images.xcassets/AppIcon.appiconset/icon-72.png'        => $application->getIcon(72, null, true),
-            $this->_dest_source_res.'/Images.xcassets/AppIcon.appiconset/icon-72@2x.png'     => $application->getIcon(144, null, true),
-            $this->_dest_source_res.'/Images.xcassets/AppIcon.appiconset/icon-76.png'        => $application->getIcon(76, null, true),
-            $this->_dest_source_res.'/Images.xcassets/AppIcon.appiconset/icon-76@2x.png'     => $application->getIcon(152, null, true),
-            $this->_dest_source_res.'/Images.xcassets/AppIcon.appiconset/icon-83.5@2x.png'   => $application->getIcon(152, null, true),
-            $this->_dest_source_res.'/Images.xcassets/AppIcon.appiconset/icon-small@3x.png'  => $application->getIcon(120, null, true),
+            $this->_dest_source_res . '/Images.xcassets/AppIcon.appiconset/icon-small.png' => $application->getIcon(29, null, true),
+            $this->_dest_source_res . '/Images.xcassets/AppIcon.appiconset/icon-small@2x.png' => $application->getIcon(58, null, true),
+            $this->_dest_source_res . '/Images.xcassets/AppIcon.appiconset/icon.png' => $application->getIcon(57, null, true),
+            $this->_dest_source_res . '/Images.xcassets/AppIcon.appiconset/icon@2x.png' => $application->getIcon(114, null, true),
+            $this->_dest_source_res . '/Images.xcassets/AppIcon.appiconset/icon-40.png' => $application->getIcon(40, null, true),
+            $this->_dest_source_res . '/Images.xcassets/AppIcon.appiconset/icon-40@2x.png' => $application->getIcon(80, null, true),
+            $this->_dest_source_res . '/Images.xcassets/AppIcon.appiconset/icon-50.png' => $application->getIcon(50, null, true),
+            $this->_dest_source_res . '/Images.xcassets/AppIcon.appiconset/icon-50@2x.png' => $application->getIcon(100, null, true),
+            $this->_dest_source_res . '/Images.xcassets/AppIcon.appiconset/icon-60.png' => $application->getIcon(60, null, true),
+            $this->_dest_source_res . '/Images.xcassets/AppIcon.appiconset/icon-60@2x.png' => $application->getIcon(120, null, true),
+            $this->_dest_source_res . '/Images.xcassets/AppIcon.appiconset/icon-60@3x.png' => $application->getIcon(180, null, true),
+            $this->_dest_source_res . '/Images.xcassets/AppIcon.appiconset/icon-72.png' => $application->getIcon(72, null, true),
+            $this->_dest_source_res . '/Images.xcassets/AppIcon.appiconset/icon-72@2x.png' => $application->getIcon(144, null, true),
+            $this->_dest_source_res . '/Images.xcassets/AppIcon.appiconset/icon-76.png' => $application->getIcon(76, null, true),
+            $this->_dest_source_res . '/Images.xcassets/AppIcon.appiconset/icon-76@2x.png' => $application->getIcon(152, null, true),
+            $this->_dest_source_res . '/Images.xcassets/AppIcon.appiconset/icon-83.5@2x.png' => $application->getIcon(167, null, true),
+            $this->_dest_source_res . '/Images.xcassets/AppIcon.appiconset/icon-small@3x.png' => $application->getIcon(120, null, true),
             $this->_dest_source_res . '/Images.xcassets/AppIcon.appiconset/icon-1024.png'    => $application->getIcon(1024, null, true),
         );
 
@@ -171,122 +171,119 @@ abstract class Application_Model_Device_Ionic_Ios_Abstract extends Application_M
     }
 
     protected function buildPList() {
+        $plistPath = $this->_dest_source_amc . '/AppsMobileCompany-Info.plist';
+        $device = $this->getDevice();
 
-        $plist_path = $this->_dest_source_amc.'/AppsMobileCompany-Info.plist';
-        $xml = simplexml_load_file($plist_path);
-        $str = '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict></dict></plist>';
-        $this->_new_xml = simplexml_load_string($str);
-        $this->_parsePList($xml->dict, $this->_new_xml->dict, $this->_new_xml);
+        $plist = new PListEditor\PListEditor();
+        $plist->readFile($plistPath);
+        // Preview PList
 
-        $plist = fopen($plist_path, 'w+');
-        if(!$plist) {
-            throw new Exception("An error occurred while copying the source files ({$plist_path})");
+        $root = $plist->root();
+        $root->removeProperty('CFBundleDisplayName');
+        $root->addProperty(\PListEditor\PListProperty::PL_STRING, $this->_application_name, 'CFBundleDisplayName');
+
+        $root->removeProperty('CFBundleIdentifier');
+        $root->addProperty(\PListEditor\PListProperty::PL_STRING, $this->_package_name, 'CFBundleIdentifier');
+
+        // Version!
+        $valueCFBundleVersion = null;
+        if (isset($this->_previewer)) {
+            $this->_previewer->setIosBuildNumber($this->_previewer->getIosBuildNumber() + 1)->save();
+            $valueCFBundleVersion = $this->_previewer->getIosVersion() . '.' . $this->_previewer->getIosBuildNumber();
+        } else {
+            $device->setBuildNumber($device->getBuildNumber() + 1)->save();
+            $valueCFBundleVersion = $device->getVersion() . '.' . $device->getBuildNumber();
         }
 
-        fwrite($plist, $this->_new_xml->asXML());
-        fclose($plist);
+        $root->removeProperty('CFBundleVersion');
+        $root->addProperty(\PListEditor\PListProperty::PL_STRING, $valueCFBundleVersion, 'CFBundleVersion');
 
-        /** Device orientations */
-        $search = "</dict>";
-        $replace = "<key>UIRequiresFullScreen</key><true/><key>UISupportedInterfaceOrientations</key><array><string>UIInterfaceOrientationPortrait</string><string>UIInterfaceOrientationLandscapeLeft</string><string>UIInterfaceOrientationLandscapeRight</string></array><key>UISupportedInterfaceOrientations~ipad</key><array><string>UIInterfaceOrientationPortrait</string><string>UIInterfaceOrientationLandscapeLeft</string><string>UIInterfaceOrientationPortraitUpsideDown</string><string>UIInterfaceOrientationLandscapeRight</string></array></dict>";
+        // Short version!
+        $valueCFBundleShortVersionString = null;
+        if (isset($this->_previewer)) {
+            $valueCFBundleShortVersionString = $this->_previewer->getIosVersion();
+        } else {
+            $valueCFBundleShortVersionString = $device->getVersion();
+        }
 
-        $this->__replace(array($search => $replace), $plist_path);
+        $root->removeProperty('CFBundleShortVersionString');
+        $root->addProperty(\PListEditor\PListProperty::PL_STRING, $valueCFBundleShortVersionString, 'CFBundleShortVersionString');
+
+        // Status bar!
+        $valueUIStatusBarHidden = $this->_application->getIosStatusBarIsHidden() ?
+            \PListEditor\PListProperty::PL_TRUE : \PListEditor\PListProperty::PL_FALSE;
+        $root->removeProperty('UIStatusBarHidden');
+        $root->addProperty($valueUIStatusBarHidden, null, 'UIStatusBarHidden');
+
+        $root->removeProperty('UIViewControllerBasedStatusBarAppearance');
+        $root->addProperty($valueUIStatusBarHidden, null, 'UIViewControllerBasedStatusBarAppearance');
+
+        // iPhone X UILaunchStoryboardName
+        $root->removeProperty('UILaunchStoryboardName');
+        $root->addProperty( \PListEditor\PListProperty::PL_STRING, 'CDVLaunchScreen', 'UILaunchStoryboardName');
+
+        // NS*Descriptions!
+        $NSDescriptions = [
+            'NSCameraUsageDescription' => 'ns_camera_ud',
+            'NSPhotoLibraryUsageDescription' => 'ns_photo_library_ud',
+            'NSLocationWhenInUseUsageDescription' => 'ns_location_when_in_use_ud',
+            'NSLocationAlwaysUsageDescription' => 'ns_location_always_ud',
+            'NSLocationAlwaysAndWhenInUseUsageDescription' => 'ns_location_always_and_when_in_use_ud',
+            'NSMotionUsageDescription' => 'ns_motion_ud'
+        ];
+        foreach ($NSDescriptions as $key => $NSDescription) {
+            // Placeholders!
+            $dataString = str_replace('#APP_NAME', $this->_application_name, $device->getData($NSDescription));
+
+            $root->removeProperty($key);
+            $root->addProperty(\PListEditor\PListProperty::PL_STRING, $dataString, $key);
+        }
+
+        // Orientation!
+        $iPhone = [];
+        $iPad = [];
+        $orientations = Siberian_Json::decode($device->getOrientations());
+        foreach ($orientations as $key => $value) {
+            if ($value) {
+                switch ($key) {
+                    case 'iphone-portrait':
+                        $iPhone[] = 'UIInterfaceOrientationPortrait';
+                        break;
+                    case 'iphone-upside-down':
+                        $iPhone[] = 'UIInterfaceOrientationPortraitUpsideDown';
+                        break;
+                    case 'iphone-landscape-left':
+                        $iPhone[] = 'UIInterfaceOrientationLandscapeLeft';
+                        break;
+                    case 'iphone-landscape-right':
+                        $iPhone[] = 'UIInterfaceOrientationLandscapeRight';
+                        break;
+                    case 'ipad-portrait':
+                        $iPad[] = 'UIInterfaceOrientationPortrait';
+                        break;
+                    case 'ipad-upside-down':
+                        $iPad[] = 'UIInterfaceOrientationPortraitUpsideDown';
+                        break;
+                    case 'ipad-landscape-left':
+                        $iPad[] = 'UIInterfaceOrientationLandscapeLeft';
+                        break;
+                    case 'ipad-landscape-right':
+                        $iPad[] = 'UIInterfaceOrientationLandscapeRight';
+                        break;
+                }
+            }
+        }
+
+        // iPhone!
+        $root->removeProperty('UISupportedInterfaceOrientations');
+        $root->addProperty(\PListEditor\PListProperty::PL_ARRAY, $iPhone, 'UISupportedInterfaceOrientations');
+
+        // iPad!
+        $root->removeProperty('UISupportedInterfaceOrientations~ipad');
+        $root->addProperty(\PListEditor\PListProperty::PL_ARRAY, $iPad, 'UISupportedInterfaceOrientations~ipad');
+
+        $plist->save();
 
         return $this;
-
-    }
-
-    protected function _parsePList($node, $newNode) {
-
-        $lastValue = '';
-
-        foreach($node->children() as $key => $child) {
-
-            $value = (string) $child;
-            if(count($child->children()) > 0) {
-                $this->_parsePList($child, $newNode->addChild($key));
-            } else {
-                if($lastValue == 'CFBundleDisplayName') {
-
-                    $value = $this->_application_name;
-
-                } else if($lastValue == 'CFBundleIdentifier') {
-
-                    $value = $this->_package_name;
-
-                } else if($lastValue == "AppId") {
-
-                    $value = $this->_application_id;
-
-                } else if(stripos($lastValue, "url_") !== false) {
-
-                    $value = $this->__getUrlValue($lastValue);
-
-                } else if(stripos($lastValue, "CFBundleVersion") !== false) {
-
-                    if(isset($this->_previewer)) {
-                        $this->_previewer->setIosBuildNumber($this->_previewer->getIosBuildNumber()+1)->save();
-                        $value = $this->_previewer->getIosVersion().".".$this->_previewer->getIosBuildNumber();
-                    } else {
-                        $this->getDevice()->setBuildNumber($this->getDevice()->getBuildNumber()+1)->save();
-                        $value = $this->getDevice()->getVersion().".".$this->getDevice()->getBuildNumber();
-                    }
-
-                } else if(stripos($lastValue, "CFBundleShortVersionString") !== false) {
-
-                    if(isset($this->_previewer)) {
-                        $value = $this->_previewer->getIosVersion();
-                    } else {
-                        $value = $this->getDevice()->getVersion();
-                    }
-
-                } else if($lastValue == "UIStatusBarHidden") {
-
-                    $key = $this->_application->getIosStatusBarIsHidden() ? "true" : "false";
-                    $value = null;
-
-                } else if($lastValue == "UIViewControllerBasedStatusBarAppearance") {
-
-                    $key = $this->_application->getIosStatusBarIsHidden() ? "false" : "true";
-                    $value = null;
-
-                }
-
-                $newNode->addChild($key, $value);
-                $lastValue = $value;
-            }
-
-        }
-
-    }
-
-    private function __getUrlValue($key) {
-
-        if (defined("CRON")) {
-            $scheme = "http";
-            $http_host = $this->getDevice()->getHost();
-            $base_url = "/";
-
-        } else {
-            $scheme = $this->_request->getScheme();
-            $http_host = $this->_request->getHttpHost();
-            $base_url = ltrim($this->_request->getBaseUrl(), "/");
-        }
-
-        $value = null;
-
-        switch ($key) {
-            case "url_scheme": $value = $scheme; break;
-            case "url_domain": $value = $http_host; break;
-            case "url_path": $value = $base_url; break;
-            case "url_key":
-                if(!defined("CRON") && $this->_request->useApplicationKey()) {
-                    $value = $this->getApplication()->getKey();
-                }
-                break;
-            default: $value = "";
-        }
-
-        return $value;
     }
 }

@@ -19,7 +19,7 @@ let clc = require('cli-color'),
     sh = require('shelljs');
 
 const notifier = require('node-notifier'),
-      http = require('http');
+      axios = require('axios');
 
 let platforms = [
     'android',
@@ -334,7 +334,7 @@ let cli = function (inputArgs) {
             packModules.forEach(function (module) {
                 pack(module);
             });
-        } else if (args.mver) {
+        } else if (args.moduleversion) {
             let mverModuleName = '';
             if (remain.length >= 2) {
                 mverModuleName = remain[1].toLowerCase();
@@ -498,19 +498,24 @@ let cleanDupesSort = function (file) {
  */
 let rebuildManifest = function () {
     sprint('Rebuilding app manifest.');
-    let developer = require(ROOT + '/developer.json');
-
-    const domain = developer.config.domain;
+    const developer = require(ROOT + '/developer.json');
     const port = developer.config.port || 80;
-    const options = {
-        host: domain,
-        port: port,
-        path: '/backoffice/api_options/manifest',
-        headers: {
-         'Authorization': 'Basic ' + new Buffer(developer.dummyEmail + ':' + developer.dummyPassword).toString('base64')
-        }
+    const requestDefaultHeaders = {
+        'Authorization': 'Basic ' + new Buffer(developer.dummyEmail + ':' + developer.dummyPassword).toString('base64')
     };
-    const failed = (error) => {
+    const protocol = (port === 80) ? 'http://' : 'https://';
+
+    axios.get(protocol + developer.config.domain + '/backoffice/api_options/manifest', {
+        responseType: 'json',
+        headers: requestDefaultHeaders
+    }).then(function (response) {
+        if (response.data.success) {
+            sprint(clc.green(response.data.message));
+            notify('Rebuild manifest succeeded');
+        } else {
+            throw (new Error(response.data.message));
+        }
+    }).catch(function (error) {
         if (typeof error === 'object' && error.hasOwnProperty('message')) {
             sprint('Unexpected error: ' + clc.red(error.message));
             console.log(error);
@@ -519,49 +524,7 @@ let rebuildManifest = function () {
         notify('Rebuild manifest FAILED.', {
             sound: 'Frog'
         });
-    };
-
-    try {
-        http.get(options, (res) => {
-            try {
-                const { statusCode } = res;
-                const contentType = res.headers['content-type'];
-
-                let error;
-                if (statusCode !== 200) {
-                  error = new Error('Request Failed.\n' +
-                                    `Status Code: ${statusCode}`);
-                } else if (!/^application\/json/.test(contentType)) {
-                  error = new Error('Invalid content-type.\n' +
-                                    `Expected application/json but received ${contentType}`);
-                }
-
-                res.setEncoding('utf8');
-                let rawData = '';
-                res.on('data', (chunk) => {
-                    rawData += chunk;
-                });
-                res.on('end', () => {
-                  try {
-                      let jsonResult = JSON.parse(rawData);
-                      if (jsonResult.success) {
-                          sprint(clc.green(jsonResult.message));
-                          notify('Rebuild manifest succeeded');
-                      } else {
-                          throw (new Error(jsonResult.message));
-                      }
-                  } catch (e) {
-                      failed(e);
-                  }
-                });
-
-            } catch (e) {
-                failed(e);
-            }
-        }).on('error', failed);
-    } catch (e) {
-        failed(e);
-    }
+    });
 };
 
 /**
@@ -741,6 +704,8 @@ let installPlugin = function (pluginName, platform, opts) {
             silent = '';
         }
 
+        console.log('plugman install --platform ' + platformBase +
+            ' --project ' + platformPath + ' ' + silent + ' --plugin ' + pluginPath + ' ' + cliVariables);
         sh.exec('plugman install --platform ' + platformBase +
             ' --project ' + platformPath + ' ' + silent + ' --plugin ' + pluginPath + ' ' + cliVariables);
     }
@@ -751,22 +716,35 @@ let installPlugin = function (pluginName, platform, opts) {
  * see specific platform documentation about building icons.
  */
 let icons = function (INSTALL) {
+    sprint('ionicons start!');
     if (INSTALL) {
         if (process.platform === 'darwin') {
             sh.exec('brew install fontforge ttfautohint');
             sh.exec('sudo gem install sass');
         }
-
-        // @todo, linux & windows deps
     }
 
     sh.exec('chmod +x ' + ROOT + '/resources/ionicons/builder/scripts/sfnt2woff');
     sh.exec('python ' + ROOT + '/resources/ionicons/builder/generate.py');
 
+    // Copy inside Siberian
     sh.cp('-rf', ROOT + '/resources/ionicons/fonts',
         ROOT + '/siberian/app/sae/design/desktop/flat/css/webfonts/ionicons/');
     sh.cp('-rf', ROOT + '/resources/ionicons/css',
         ROOT + '/siberian/app/sae/design/desktop/flat/css/webfonts/ionicons/');
+
+    // Copy inside Ionic!
+    sh.cp('-rf', ROOT + '/resources/ionicons/fonts/*',
+        ROOT + '/ionic/www/lib/ionic/scss/ionicons/');
+    sh.cp('-rf', ROOT + '/resources/ionicons/scss',
+        ROOT + '/ionic/www/lib/ionic/scss/ionicons/');
+
+    // Rebuild Ionic SCSS
+    sh.cd(ROOT + '/ionic/');
+    sh.exec('node builder.js --sass');
+    sh.exec('node builder.js --bundlecss');
+
+    sprint('ionicons rebuild done!');
 };
 
 /**
@@ -808,14 +786,13 @@ let copyPlatform = function (platform) {
             sh.rm('-rf', siberianPlatformPath.replace('browser', 'overview'));
 
             // Copy!
-            sh.cp('-r', ionicPlatformPath + '/', siberianPlatformPath);
+            sh.cp('-r', ionicPlatformPath, siberianPlatformPath);
             sh.mkdir('-p', siberianPlatformPath + '/scss/');
             sh.cp('-r', ROOT + '/ionic/scss/ionic.siberian*.scss', siberianPlatformPath + '/scss/');
             cleanupWww(siberianPlatformPath + '/', true);
 
             // Duplicate in 'overview'!
-            sh.mkdir('-p', siberianPlatformPath.replace('browser', 'overview'));
-            sh.cp('-r', siberianPlatformPath + '/*', siberianPlatformPath.replace('browser', 'overview'));
+            sh.cp('-r', siberianPlatformPath, siberianPlatformPath.replace('browser', 'overview'));
 
             break;
 
@@ -997,7 +974,7 @@ let createOrSyncGit = function (gitPath, url, branch) {
         sh.exec('git clone -b ' + branch + ' ' + url + ' ' + gitPath);
     }
 
-    let revision = sh.exec('git rev-parse HEAD^0', { silent: true }).output.trim();
+    let revision = sh.exec('git rev-parse HEAD^0', { silent: true }).stdout.trim();
     sprint('Up-to-date (' + revision + ')');
 };
 
@@ -1050,7 +1027,7 @@ let switchType = function (type, reinstall, emptydb) {
 
     let appIni = fs.readFileSync(iniPath, 'utf8');
     appIni = appIni.replace(/dbname = '(.*)'/, 'dbname = "' +
-        developer.mysql.database_prefix+type.toLowerCase() + '"');
+        developer.mysql.databasePrefix+type.toLowerCase() + '"');
 
     // Reset the isInstalled var.!
     if (reinstall) {
@@ -1061,7 +1038,7 @@ let switchType = function (type, reinstall, emptydb) {
     if (emptydb) {
         let mysqlUsername = developer.mysql.username;
         let mysqlPassword = developer.mysql.password;
-        let mysqlDatabasePrefix = developer.mysql.database_prefix;
+        let mysqlDatabasePrefix = developer.mysql.databasePrefix;
 
         sh.exec('mysql -u ' + mysqlUsername +
             ' -p' + mysqlPassword +
@@ -1168,7 +1145,7 @@ let init = function () {
                             prompt('Mysql Hostname', developer.mysql.host, function (mysqlHost) {
                                 prompt('Mysql Username', developer.mysql.username, function (mysqlUsername) {
                                     prompt('Mysql Password', developer.mysql.password, function (mysqlPassword) {
-                                        prompt('Mysql Database prefix', developer.mysql.database_prefix, function (mysqlDatabasePrefix) {
+                                        prompt('Mysql Database prefix', developer.mysql.databasePrefix, function (mysqlDatabasePrefix) {
 
                                             let newDeveloper = {
                                                 name: name,
@@ -1573,13 +1550,13 @@ let mver = function (version, module) {
         currentEdition = currentVersion.match(/const TYPE = '([a-z])+';/gi),
         mysqlUsername = developer.mysql.username,
         mysqlPassword = developer.mysql.password,
-        mysqlDatabasePrefix = developer.mysql.database_prefix,
-        query = 'UPDATE `module` SET `version` = \'' + version + '\' ';
+        mysqlDatabasePrefix = developer.mysql.databasePrefix,
+        query = 'UPDATE `module` SET `version` = "' + version + '" ';
 
     currentEdition = currentEdition[0].replace(/(const TYPE = '|';)/g, '').toLowerCase();
 
     if (module.trim() !== '') {
-        query = query + ' WHERE `name` LIKE \'%' + module.trim() + '%\'';
+        query = query + ' WHERE `name` LIKE "%' + module.trim() + '%"';
     }
 
     sh.exec('mysql -u ' + mysqlUsername +

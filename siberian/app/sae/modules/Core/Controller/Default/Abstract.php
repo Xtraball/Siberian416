@@ -301,6 +301,9 @@ abstract class Core_Controller_Default_Abstract extends Zend_Controller_Action i
         $logger->sendException("Fatal Error: \n".print_r($errors, true));
     }
 
+    /**
+     * @return Siberian_Layout|Siberian_Layout_Email
+     */
     public function getLayout() {
         return $this->_layout;
     }
@@ -359,7 +362,10 @@ abstract class Core_Controller_Default_Abstract extends Zend_Controller_Action i
         Siberian_Media::disableTemporary();
 
         $color = str_replace('#', '', $color);
-        $id = md5(implode('+', array($image_id, $color)));
+        $id = md5(implode('+', [
+            $image_id,
+            $color
+        ]));
         $url = '';
 
         $image = new Media_Model_Library_Image();
@@ -543,16 +549,7 @@ abstract class Core_Controller_Default_Abstract extends Zend_Controller_Action i
         $configSession = new Zend_Config_Ini(APPLICATION_PATH . '/configs/session.ini', APPLICATION_ENV);
 
         if(!$this->getRequest()->isInstalling()) {
-            $config = array(
-                'name'           => 'session',
-                'primary'        => 'session_id',
-                'modifiedColumn' => 'modified',
-                'dataColumn'     => 'data',
-                'lifetimeColumn' => 'lifetime',
-                'lifetime'       => $configSession->gc_maxlifetime
-            );
-
-            Zend_Session::setSaveHandler(new Zend_Session_SaveHandler_DbTable($config));
+            Siberian_Session::init($configSession);
         }
 
         if(!$this->getRequest()->isInstalling() OR is_writable(Core_Model_Directory::getSessionDirectory(true))) {

@@ -8,7 +8,8 @@
     "ImageIO.framework": 1,
     "CoreLocation.framework": 2,
     "libz.tbd": 1,
-    "CFNetwork.framework": 1,
+    "libsqlite3.dylib": 1,
+    "WebKit.framework": 1,
     "Social.framework": 1,
     "MessageUI.framework": 1,
     "MediaPlayer.framework": 1

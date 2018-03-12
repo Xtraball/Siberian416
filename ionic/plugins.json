@@ -8,10 +8,6 @@
       "version": "latest",
       "variables": {}
     },
-    "cordova-plugin-background-fetch": {
-      "version": "latest",
-      "variables": {}
-    },
     "phonegap-plugin-barcodescanner": {
       "version": "latest",
       "variables": {}
@@ -28,16 +24,16 @@
       "version": "~1.1.1",
       "variables": {}
     },
-    "cordova-extension": {
-      "version": "latest",
-      "variables": {}
-    },
     "cordova-plugin-file": {
       "version": "latest",
       "variables": {}
     },
+    "cordova-plugin-geofence": {
+      "version": "latest",
+      "variables": {}
+    },
     "cordova-plugin-geolocation": {
-      "version": "~2.1.0",
+      "version": "latest",
       "variables": {}
     },
     "cordova-plugin-inappbrowser": {
@@ -86,14 +82,14 @@
       "version": "latest",
       "variables": {}
     },
-    "cordova-background-geolocation-lt": {
-      "version": "latest",
-      "variables": {}
-    },
     "cordova-hot-code-push": {
       "version": "latest"
     },
     "cordova-plugin-splashscreen": {
+      "version": "latest",
+      "variables": {}
+    },
+    "cordova-extension": {
       "version": "latest",
       "variables": {}
     },
@@ -105,10 +101,6 @@
     }
   },
   "ios-noads": {
-    "cordova-background-geolocation-lt": {
-      "version": "latest",
-      "variables": {}
-    },
     "cordova-hot-code-push": {
       "version": "latest"
     },
@@ -141,14 +133,14 @@
       "version": "latest",
       "variables": {}
     },
+    "cordova-extension": {
+      "version": "latest",
+      "variables": {}
+    },
     "cordova-hot-code-push": {
       "version": "latest"
     },
     "cordova-plugin-splashscreen": {
-      "version": "latest",
-      "variables": {}
-    },
-    "siberian-plugin-backgroundgeoloc": {
       "version": "latest",
       "variables": {}
     },

@@ -41,6 +41,7 @@
           <string>icon@2x</string>
           <string>icon-72</string>
           <string>icon-72@2x</string>
+          <string>icon-83.5@2x</string>
         </array>
         <key>UIPrerenderedIcon</key>
         <false/>
@@ -189,12 +190,9 @@
       <key>NSAllowsArbitraryLoads</key>
       <true/>
     </dict>
-    <key>NSLocationAlwaysUsageDescription</key>
-    <string>Location is required to get specific push notes and other great items</string>
     <key>UIBackgroundModes</key>
     <array>
       <string>remote-notification</string>
-      <string>fetch</string>
       <string>audio</string>
     </array>
     <key>NSCameraUsageDescription</key>
@@ -203,6 +201,10 @@
     <string>Import pictures from your library</string>
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>Use the GPS for live navigation</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>Background location is used to send you geolocated push notifications.</string>
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>Background location is used to send you geolocated push notifications.</string>
     <key>NSCalendarsUsageDescription</key>
     <string>Be notified of the App events</string>
     <key>NSContactsUsageDescription</key>
