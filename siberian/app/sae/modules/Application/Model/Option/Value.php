@@ -272,18 +272,22 @@ class Application_Model_Option_Value extends Application_Model_Option {
         $old_app_id = $this->getAppId();
         $object = $this->getObject();
 
-        $this->setId(null)
+        $this
+            ->setId(null)
             ->setAppId($application->getId())
-            ->save()
-        ;
+            ->save();
 
-        $this->setOldValueId($old_value_id)
-            ->setOldAppId($old_app_id)
-        ;
+        $this
+            ->setOldValueId($old_value_id)
+            ->setOldAppId($old_app_id);
 
-        if($object->getId()) {
-            $collection = $object->findAll(array('value_id' => $this->getOldValueId()));
-            foreach($collection as $object) {
+        if ($object->getId()) {
+            $collection = $object->findAll(
+                [
+                    'value_id' => $this->getOldValueId()
+                ]
+            );
+            foreach ($collection as $object) {
                 $object->copyTo($this);
             }
         }

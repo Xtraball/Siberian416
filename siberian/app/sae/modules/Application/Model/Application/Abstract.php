@@ -3,12 +3,22 @@
 /**
  * Class Application_Model_Application_Abstract
  *
- * @version 4.12.22
+ * Release: <4.13.9>
  *
  * @method integer getId()
  * @method string getFlickrKey()
- * @method string getFlickrSecret()
+ * @method string getFlickrSecret()é
  * @method string getDesignCode()
+ * @method integer getLayoutId()
+ * @method $this setUseTmpKey($useTmpKey)
+ * @method $this setName(string $name)
+ * @method string getName()
+ * @method $this setLayoutId($layoutId)
+ * @method $this unsCreatedAt()
+ * @method $this unsUpdatedAt()
+ * @method $this setDomain(string $domain)
+ * @method $this setSubdomain(string $subdomain)
+ * @method $this setSubdomainIsValidated(mixed $isValidated)
  */
 abstract class Application_Model_Application_Abstract extends Core_Model_Default {
 
@@ -28,9 +38,14 @@ abstract class Application_Model_Application_Abstract extends Core_Model_Default
     protected $_devices;
     protected $_design;
     protected $_design_blocks;
-    protected $_admin_ids = array();
+    protected $_admin_ids = [];
 
-    public function __construct($params = array()) {
+    /**
+     * Application_Model_Application_Abstract constructor.
+     * @param array $params
+     */
+    public function __construct($params = [])
+    {
         parent::__construct($params);
         $this->_db_table = 'Application_Model_Db_Table_Application';
     }
@@ -38,15 +53,13 @@ abstract class Application_Model_Application_Abstract extends Core_Model_Default
     /**
      * Testing if a value_id belongs to the current app
      *
-     * @todo Allowing cross-app access
-     *
      * @param $value_id
      * @return bool
      */
-    public function valueIdBelongsTo($value_id) {
-
+    public function valueIdBelongsTo($value_id)
+    {
         # Handle special cases.
-        if(in_array($value_id, array("home"))) {
+        if (in_array($value_id, ['home'])) {
             return true;
         }
 
@@ -61,16 +74,21 @@ abstract class Application_Model_Application_Abstract extends Core_Model_Default
         return $result;
     }
 
-    public function findByHost($host, $path = null) {
-
-        if(!empty($path)) {
+    /**
+     * @param $host
+     * @param null $path
+     * @return $this
+     */
+    public function findByHost($host, $path = null)
+    {
+        if (!empty($path)) {
             $uri = explode('/', ltrim($path, '/'));
             $i = 0;
-            while($i <= 1) {
-                if(!empty($uri[$i])) {
+            while ($i <= 1) {
+                if (!empty($uri[$i])) {
                     $value = $uri[$i];
                     $this->find($value, 'tmp_key');
-                    if($this->getId()) {
+                    if ($this->getId()) {
                         $this->setUseTmpKey('1');
                         break;
                     }
@@ -79,40 +97,54 @@ abstract class Application_Model_Application_Abstract extends Core_Model_Default
             }
         }
 
-        if(!$this->getId()) {
-
-            if(!in_array($host[0], array('www'))) {
+        if (!$this->getId()) {
+            if (!in_array($host[0], ['www'])) {
                 $this->find($host, 'domain');
             }
         }
 
         return $this;
-
     }
 
-    public function findAllByAdmin($admin_id, $where = array(), $order = null, $count = null, $offset = null) {
+    /**
+     * @param $admin_id
+     * @param array $where
+     * @param null $order
+     * @param null $count
+     * @param null $offset
+     * @return mixed
+     */
+    public function findAllByAdmin($admin_id, $where = [], $order = null, $count = null, $offset = null)
+    {
         return $this->getTable()->findAllByAdmin($admin_id, $where, $order, $count, $offset);
     }
 
-    public function findAllToPublish() {
+    /**
+     * @return mixed
+     */
+    public function findAllToPublish()
+    {
         return $this->getTable()->findAllToPublish();
     }
 
-    public function getOwner() {
-
+    /**
+     * @return Admin_Model_Admin
+     */
+    public function getOwner()
+    {
         $admin = new Admin_Model_Admin();
         $admin->find($this->getAdminId());
         return $admin;
-
     }
 
     /**
      * @return array|mixed|null|string
      */
-    public function getPrivacyPolicy() {
+    public function getPrivacyPolicy()
+    {
         $data = $this->getData("privacy_policy");
         $data = trim(strip_tags($data));
-        if(empty($data)) {
+        if (empty($data)) {
             $config_pp = System_Model_Config::getValueFor("privacy_policy");
             $this->setData("privacy_policy", $config_pp)->save();
         }
@@ -120,10 +152,13 @@ abstract class Application_Model_Application_Abstract extends Core_Model_Default
         return $this->getData("privacy_policy");
     }
 
-    public function save() {
-
-        if(!$this->getId()) {
-
+    /**
+     * @return $this
+     * @throws Siberian_Exception
+     */
+    public function save()
+    {
+        if (!$this->getId()) {
             // Check if values are valid!
             $applicationName = trim($this->getData('name'));
             if (empty($applicationName)) {
@@ -150,8 +185,8 @@ abstract class Application_Model_Application_Abstract extends Core_Model_Default
 
         parent::save();
 
-        if(!empty($this->_admin_ids)) {
-            foreach($this->_admin_ids as $admin_id) {
+        if (!empty($this->_admin_ids)) {
+            foreach ($this->_admin_ids as $admin_id) {
                 $this->getTable()->addAdmin($this->getId(), $admin_id);
             }
         }
@@ -160,6 +195,10 @@ abstract class Application_Model_Application_Abstract extends Core_Model_Default
 
     }
 
+    /**
+     * @param $admin
+     * @return $this
+     */
     public function addAdmin($admin) {
 
         if($this->getId()) {
@@ -344,6 +383,10 @@ abstract class Application_Model_Application_Abstract extends Core_Model_Default
         }
     }
 
+    /**
+     * @param null $type_id
+     * @return mixed
+     */
     public function getBlocks($type_id = null) {
 
         if(!$type_id) {
@@ -351,10 +394,12 @@ abstract class Application_Model_Application_Abstract extends Core_Model_Default
         }
 
         $block = new Template_Model_Block();
-        if(empty($this->_design_blocks)) {
-            $this->_design_blocks = $block->findAll(array('app_id' => $this->getId(), 'type_id' => $type_id), 'position ASC');
+        if (empty($this->_design_blocks)) {
+            $this->_design_blocks = $block->findAll([
+                'app_id' => $this->getId(), 'type_id' => $type_id
+            ], 'position ASC');
 
-            if(!empty($this->_design_blocks)) {
+            if (!empty($this->_design_blocks)) {
                 foreach($this->_design_blocks as $block) {
                     $block->setApplication($this);
                 }
@@ -390,20 +435,25 @@ abstract class Application_Model_Application_Abstract extends Core_Model_Default
         return (new Template_Model_Block());
     }
 
+    /**
+     * @param $blocks
+     * @return $this
+     */
     public function setBlocks($blocks) {
         $this->_design_blocks = $blocks;
         return $this;
     }
 
+    /**
+     * @return Application_Model_Layout_Homepage
+     */
     public function getLayout() {
-
-        if(!$this->_layout) {
+        if (!$this->_layout) {
             $this->_layout = new Application_Model_Layout_Homepage();
             $this->_layout->find($this->getLayoutId());
         }
 
         return $this->_layout;
-
     }
 
     /**
@@ -490,7 +540,7 @@ abstract class Application_Model_Application_Abstract extends Core_Model_Default
         };
 
         /** Just in case someone messed-up data in backoffice we must have a fallback. */
-        if(Siberian::getWhitelabel() !== false) {
+        if (Siberian::getWhitelabel() !== false) {
 
             $whitelabel = Siberian::getWhitelabel();
 
@@ -534,6 +584,7 @@ abstract class Application_Model_Application_Abstract extends Core_Model_Default
         // Now we can process bundle id or package name
         switch($type) {
             case "android":
+            default:
                     return $id_android . $this->getKey();
                 break;
             case "ios":
@@ -557,42 +608,64 @@ abstract class Application_Model_Application_Abstract extends Core_Model_Default
         return implode(".", $parts);
     }
 
+    /**
+     * @return bool
+     */
     public function isActive() {
         return (bool) $this->getData("is_active");
     }
 
+    /**
+     * @return bool
+     */
     public function isLocked() {
         return (bool) $this->getData("is_locked");
     }
 
+    /**
+     * @return bool
+     */
     public function canBePublished() {
         return (bool) $this->getData("can_be_published");
     }
 
+    /**
+     * @param null $admin_id
+     * @return mixed
+     */
     public function isSomeoneElseEditingIt($admin_id = null) {
         return $this->getTable()->isSomeoneElseEditingIt($this->getId(), Zend_Session::getId(), $admin_id);
     }
 
+    /**
+     * @return mixed
+     */
     public function getCustomers() {
 
         if(is_null($this->_customers)) {
             $customer = new Customer_Model_Customer();
-            $this->_customers = $customer->findAll(array("app_id" => $this->getId()));
+            $this->_customers = $customer->findAll([
+                'app_id' => $this->getId()
+            ]);
         }
 
         return $this->_customers;
 
     }
 
+    /**
+     * @return Application_Model_Option_Value[]
+     */
     public function getOptions() {
-
-        if(empty($this->_options)) {
+        if (empty($this->_options)) {
             $option = new Application_Model_Option_Value();
-            $this->_options = $option->findAll(array("a.app_id" => $this->getId(), "is_visible" => 1));
+            $this->_options = $option->findAll([
+                'a.app_id' => $this->getId(),
+                'is_visible' => 1
+            ]);
         }
 
         return $this->_options;
-
     }
 
     public function getUsedOptions() {
@@ -1148,136 +1221,144 @@ abstract class Application_Model_Application_Abstract extends Core_Model_Default
         return $this->getData('require_to_be_logged_in');
     }
 
+    /**
+     * @return $this
+     */
     public function duplicate() {
 
-        // Retrieve all the accounts
+        // Retrieve all the accounts!
         $admins = $this->getAdmins();
-        $admin_ids = array();
-        foreach($admins as $admin) {
-            $admin_ids[] = $admin;
+        $adminIds = [];
+        foreach ($admins as $admin) {
+            $adminIds[] = $admin;
         }
 
-        // Retrieve the design
-        $blocks = array();
-        foreach($this->getBlocks() as $block) {
+        // Retrieve the design!
+        $blocks = [];
+        foreach ($this->getBlocks() as $block) {
             $blocks[] = $block->getData();
         }
-        $layout_id = $this->getLayoutId();
+        $layoutId = $this->getLayoutId();
 
-        // Load the options
-        $option_values = $this->getOptions();
-        $value_ids = array();
+        // Load the options!
+        $optionValues = $this->getOptions();
+        $valueIds = [];
 
-        // Save the new application
-        $old_app_id = $this->getId();
+        // Save the new application!
+        $oldAppId = $this->getId();
         $this->setId(null)
-            ->setName($this->getName() . " (Copy)")
-            ->setLayoutId($layout_id)
+            ->setName($this->getName() . ' (Copy)')
+            ->setLayoutId($layoutId)
             ->unsCreatedAt()
             ->unsUpdatedAt()
-            ->setData("bundle_id", "")
-            ->setData("package_name", "")
+            ->setData('bundle_id', '')
+            ->setData('package_name', '')
             ->setDomain(null)
             ->setSubdomain(null)
             ->setSubdomainIsValidated(null)
-            ->save()
-        ;
+            ->save();
 
         // Duplicate the images folder
-        $old_app_folder = Core_Model_Directory::getBasePathTo(Application_Model_Application::getImagePath() . DIRECTORY_SEPARATOR . $old_app_id);
-        $target_app_folder = Core_Model_Directory::getBasePathTo(Application_Model_Application::getImagePath() . DIRECTORY_SEPARATOR . $this->getId());
-        Core_Model_Directory::duplicate($old_app_folder, $target_app_folder);
+        $oldAppFolder = Core_Model_Directory::getBasePathTo(Application_Model_Application::getImagePath() .
+            DIRECTORY_SEPARATOR . $oldAppId);
+        $targetAppFolder = Core_Model_Directory::getBasePathTo(Application_Model_Application::getImagePath() .
+            DIRECTORY_SEPARATOR . $this->getId());
+        Core_Model_Directory::duplicate($oldAppFolder, $targetAppFolder);
 
-        // Save the design
-        if(!empty($blocks)) {
-            foreach($blocks as $template_block) {
+        // Save the design!
+        if (!empty($blocks)) {
+            foreach ($blocks as $template_block) {
                 $block = new Template_Model_Block();
                 $block->setData($template_block);
                 $block->setAppId($this->getId());
                 $block->save();
             }
         }
-        $this->setLayoutId($layout_id)
+        $this->setLayoutId($layoutId)
             ->save();
 
-        // Copy all the features but folders
-        foreach($option_values as $option_value) {
-            if($option_value->getCode() != 'folder') {
-                $option_value->copyTo($this);
-                $value_ids[$option_value->getOldValueId()] = $option_value->getId();
+        // Copy all the features but folders!
+        foreach ($optionValues as $optionValue) {
+            if (!in_array($optionValue->getCode(), ['folder', 'folder_v2'])) {
+                $optionValue->copyTo($this);
+                $valueIds[$optionValue->getOldValueId()] = $optionValue->getId();
             }
         }
 
-        // Copy the folders
-        foreach($option_values as $option_value) {
-            if($option_value->getCode() == 'folder') {
-                $option_value->copyTo($this);
-                $value_ids[$option_value->getOldValueId()] = $option_value->getId();
+        // Copy the folders!
+        foreach ($optionValues as $optionValue) {
+            if (in_array($optionValue->getCode(), ['folder', 'folder_v2'])) {
+                $optionValue->copyTo($this);
+                $valueIds[$optionValue->getOldValueId()] = $optionValue->getId();
             }
         }
 
-        // Lock the features
+        // Lock the features!
         $locker = new Padlock_Model_Padlock();
-        $old_locked_value_ids = $locker->getValueIds($old_app_id);
-        $locked_value_ids = array();
-        foreach($old_locked_value_ids as $old_locked_value_id) {
-            if(!empty($value_ids[$old_locked_value_id])) {
-                $locked_value_ids[] = $value_ids[$old_locked_value_id];
+        $oldLockedValueIds = $locker->getValueIds($oldAppId);
+        $lockedValueIds = [];
+        foreach ($oldLockedValueIds as $oldLockedValueId) {
+            if (!empty($valueIds[$oldLockedValueId])) {
+                $lockedValueIds[] = $valueIds[$oldLockedValueId];
             }
         }
 
-        if(!empty($locked_value_ids)) {
-            $locker->setValueIds($locked_value_ids)
-                ->saveValueIds($this->getId())
-            ;
+        if (!empty($lockedValueIds)) {
+            $locker
+                ->setValueIds($lockedValueIds)
+                ->saveValueIds($this->getId());
         }
 
-        // Set the accounts to the application
-        $this->setAdminIds($admin_ids);
+        // Set the accounts to the application!
+        $this->setAdminIds($adminIds);
         $this->save();
 
-        //copy slideshow if needed
-        if($this->getHomepageSliderIsVisible()) {
-            $app_id = $this->getId();
-            //create new lib
-            $library = new Media_Model_Library();
-            $library->setName("homepage_slider_".$app_id)
+        // Copy slideshow if needed!
+        if ($this->getHomepageSliderIsVisible()) {
+            $appId = $this->getId();
+
+            // Create new lib!
+            $library = (new Media_Model_Library())
+                ->setName('homepage_slider_' . $appId)
                 ->save();
-            $library_id = $library->getId();
+            $libraryId = $library->getId();
 
-            //duplicate current images
-            $library_image = new Media_Model_Library_Image();
-            $images = $library_image->findAll(
-                array("library_id" => $this->getHomepageSliderLibraryId())
-            );
-            foreach($images as $image) {
+            // Duplicate current images!
+            $images = (new Media_Model_Library_Image())
+                ->findAll(
+                    [
+                        'library_id' => $this->getHomepageSliderLibraryId()
+                    ]
+                );
+
+            foreach ($images as $image) {
                 $oldLink = $image->getLink();
-                $explodedLink = explode("/", $oldLink);
-                $explodedLink[3] = $app_id;
+                $explodedLink = explode('/', $oldLink);
+                $explodedLink[3] = $appId;
 
-                $newLink = implode("/",$explodedLink);
+                $newLink = implode('/', $explodedLink);
 
-                //copy file
-                mkdir(dirname(getcwd().$newLink), 0777, true);
-                copy(getcwd().$oldLink, getcwd().$newLink);
+                // Copy file!
+                mkdir(dirname(getcwd() . $newLink), 0777, true);
+                copy(getcwd() . $oldLink, getcwd() . $newLink);
 
-                //duplicate db entry
+                // Duplicate db entry!
                 $newModelImage = new Media_Model_Library_Image();
                 $newModelImage
-                    ->setLibraryId($library_id)
+                    ->setLibraryId($libraryId)
                     ->setLink($newLink)
-                    ->setAppId($app_id)
+                    ->setAppId($appId)
                     ->setPosition($image->getPosition())
                     ->save();
             }
 
-            //change library slideshow image
-            $this->setHomepageSliderLibraryId($library_id)
+            // Change library slideshow image!
+            $this
+                ->setHomepageSliderLibraryId($libraryId)
                 ->save();
         }
 
         return $this;
-
     }
 
     public static $singleton = null;

@@ -37,7 +37,8 @@ class Folder2_Model_Folder extends Core_Model_Default {
      * Folder2_Model_Folder constructor.
      * @param array $params
      */
-    public function __construct($params = []) {
+    public function __construct($params = [])
+    {
         parent::__construct($params);
         $this->_db_table = 'Folder2_Model_Db_Table_Folder';
 
@@ -50,7 +51,8 @@ class Folder2_Model_Folder extends Core_Model_Default {
     /**
      * @return bool
      */
-    public function getShowSearch() {
+    public function getShowSearch()
+    {
         return ($this->getData('show_search') === '1');
     }
 
@@ -58,7 +60,8 @@ class Folder2_Model_Folder extends Core_Model_Default {
      * @param $valueId
      * @return array
      */
-    public function getInappStates($valueId) {
+    public function getInappStates($valueId)
+    {
         $inAppStates = [
             [
                 'state' => 'folder2-category-list',
@@ -76,7 +79,8 @@ class Folder2_Model_Folder extends Core_Model_Default {
      * @param Application_Model_Option_Value $optionValue
      * @return array
      */
-    public function getFeaturePaths($optionValue) {
+    public function getFeaturePaths($optionValue)
+    {
         return [];
     }
 
@@ -84,7 +88,8 @@ class Folder2_Model_Folder extends Core_Model_Default {
      * @param Application_Model_Option_Value $optionValue
      * @return array
      */
-    public function getAssetsPaths($optionValue) {
+    public function getAssetsPaths($optionValue)
+    {
         return [];
     }
 
@@ -92,7 +97,8 @@ class Folder2_Model_Folder extends Core_Model_Default {
      * @param Application_Model_Option_Value $optionValue
      * @return bool|array
      */
-    public function getEmbedPayload($optionValue = null) {
+    public function getEmbedPayload($optionValue = null)
+    {
         if (!$optionValue) {
             return false;
         }
@@ -248,7 +254,8 @@ class Folder2_Model_Folder extends Core_Model_Default {
      * @param $optionValue
      * @return $this
      */
-    public function deleteFeature($optionValue) {
+    public function deleteFeature($optionValue)
+    {
         if (!$this->getId()) {
             return $this;
         }
@@ -261,12 +268,70 @@ class Folder2_Model_Folder extends Core_Model_Default {
     /**
      * @return Folder2_Model_Category
      */
-    public function getRootCategory() {
+    public function getRootCategory()
+    {
         if (!$this->_root_category) {
             $this->_root_category = (new Folder2_Model_Category())
                 ->find($this->getRootCategoryId());
         }
 
         return $this->_root_category;
+    }
+
+    /**
+     * @param $option
+     * @param null $parentId
+     * @return $this
+     */
+    public function copyTo($option, $parentId = null)
+    {
+        $rootCategory = (new Folder2_Model_Category())
+            ->find($this->getRootCategoryId());
+
+        $this->copyCategoryTo($option, $rootCategory);
+
+        $this
+            ->setId(null)
+            ->setValueId($option->getId())
+            ->setRootCategoryId($rootCategory->getId())
+            ->save();
+
+        return $this;
+    }
+
+    /**
+     * @param $option
+     * @param $category
+     * @param null $parentId
+     * @return $this
+     */
+    public function copyCategoryTo($option, $category, $parentId = null)
+    {
+        $children = $category->getChildren();
+        $optionValues = (new Application_Model_Option_Value())
+            ->findAll(
+                [
+                    'app_id' => $option->getAppId(),
+                    'folder_category_id' => $category->getId()
+                ],
+                ['folder_category_position ASC']
+            );
+
+        $category
+            ->setId(null)
+            ->setParentId($parentId)
+            ->save();
+
+        foreach ($optionValues as $optionValue) {
+            $optionValue
+                ->setFolderCategoryId($category->getId())
+                ->save();
+        }
+
+        foreach ($children as $child) {
+            $this->copyCategoryTo($option, $child, $category->getId());
+        }
+
+        return $this;
     }
 }

@@ -1,5 +1,11 @@
 <?php
 
+/**
+ * Class Media_Model_Library
+ *
+ * @method integer getId()
+ * @method $this setName(string $name)
+ */
 class Media_Model_Library extends Core_Model_Default {
 
     protected $_images;

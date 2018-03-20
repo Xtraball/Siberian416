@@ -415,6 +415,13 @@ class Folder_Model_Folder extends Core_Model_Default {
         return $paths;
     }
 
+    /**
+     * @param $option_value
+     * @param $design
+     * @param $category
+     *
+     * @deprecated
+     */
     public function createDummyContents($option_value, $design, $category) {
 
         $dummy_content_xml = $this->_getDummyXml($design, $category);
@@ -530,6 +537,12 @@ class Folder_Model_Folder extends Core_Model_Default {
         }
     }
 
+    /**
+     * @param $option
+     * @return $this
+     *
+     * @deprecated
+     */
     public function copyTo($option) {
 
         $root_category = new Folder_Model_Category();
@@ -546,6 +559,14 @@ class Folder_Model_Folder extends Core_Model_Default {
         return $this;
     }
 
+    /**
+     * @param $option
+     * @param $category
+     * @param null $parent_id
+     * @return $this
+     *
+     * @deprecated
+     */
     public function copyCategoryTo($option, $category, $parent_id = null) {
 
         $children = $category->getChildren();
@@ -563,6 +584,215 @@ class Folder_Model_Folder extends Core_Model_Default {
 
         return $this;
 
+    }
+
+
+    /**
+     * @param $option
+     * @param null $exportType
+     * @return string
+     * @throws Exception
+     */
+    public function exportAction($option, $exportType = null)
+    {
+        // $exportType all|tree-only
+
+        if ($option && $option->getId()) {
+            $currentOption = $option;
+            $valueId = $currentOption->getId();
+
+            // Fetch the folder!
+            $folder = (new Folder_Model_Folder())
+                ->find($valueId, 'value_id');
+
+            // Fetch all the subfolders!
+            $subFolders = [];
+            (new Folder_Model_Folder())
+                ->_getAllChildren($folder->getRootCategory(), $subFolders);
+
+            $flattenSubfolders = [];
+            foreach ($subFolders as $subFolder) {
+                $flattenSubfolders[] = $subFolder->getData();
+            }
+
+            // Fetch all sub-features!
+
+
+            $dataSet = [
+                'option' => $currentOption->getData(),
+                'folder' => $folder->getData(),
+                'subfolders' => $flattenSubfolders,
+            ];
+
+            try {
+                $result = Siberian_Yaml::encode($dataSet);
+            } catch(Exception $e) {
+                throw new Exception("#XXX-01: An error occured while exporting dataset to YAML.");
+            }
+
+            return $result;
+
+        } else {
+            throw new Exception("#XXX-02: Unable to export the feature, non-existing id.");
+        }
+    }
+
+    /**
+     * @param $path
+     * @throws Exception
+     */
+    public function importAction($path) {
+        $content = file_get_contents($path);
+
+        try {
+            $dataset = Siberian_Yaml::decode($content);
+        } catch(Exception $e) {
+            throw new Exception("#087-04: An error occured while importing YAML dataset '$path'.");
+        }
+
+        $application = $this->getApplication();
+
+        $application_option = new Application_Model_Option_Value();
+        $job_model = new Job_Model_Job();
+
+        if(isset($dataset["option"])) {
+            $new_application_option = $application_option
+                ->setData($dataset["option"])
+                ->unsData("value_id")
+                ->unsData("id")
+                ->setData('app_id', $application->getId())
+                ->save()
+            ;
+
+            $new_value_id = $new_application_option->getId();
+
+            /** Create Job/Options */
+            if(isset($dataset["job"]) && $new_value_id) {
+                $new_job = $job_model
+                    ->setData($dataset["job"])
+                    ->unsData("job_id")
+                    ->unsData("id")
+                    ->setData("value_id", $new_value_id)
+                    ->save()
+                ;
+
+                /** Insert categories */
+                $match_category_ids = array();
+                if(isset($dataset["categories"]) && $new_job->getId()) {
+
+                    foreach($dataset["categories"] as $category) {
+
+                        $new_category = new Job_Model_Category();
+                        $new_category
+                            ->setData($category)
+                            ->unsData("category_id")
+                            ->unsData("id")
+                            ->setData("job_id", $new_job->getId())
+                            ->_setIcon($category["icon"], $new_application_option)
+                            ->save()
+                        ;
+
+                        $match_category_ids[$category["category_id"]] = $new_category->getId();
+                    }
+
+                } else {
+                    /** Log, empty categories */
+                }
+
+                /** Insert companies */
+                $match_company_ids = array();
+                if(isset($dataset["companies"]) && $new_job->getId()) {
+
+                    foreach($dataset["companies"] as $company) {
+
+                        $new_company = new Job_Model_Company();
+                        $new_company
+                            ->setData($company)
+                            ->unsData("company_id")
+                            ->unsData("id")
+                            ->unsData("administrators") /** clear admins */
+                            ->setData("job_id", $new_job->getId())
+                            ->_setLogo($company["logo"], $new_application_option)
+                            ->_setHeader($company["header"], $new_application_option)
+                            ->save()
+                        ;
+
+                        $match_company_ids[$company["company_id"]] = $new_company->getId();
+                    }
+
+                } else {
+                    /** Log, empty categories */
+                }
+
+                /** Insert places */
+                $match_place_ids = array();
+                if(isset($dataset["places"]) && $new_job->getId()) {
+
+                    foreach($dataset["places"] as $place) {
+
+                        $old_category_id = $place["category_id"];
+                        $old_company_id = $place["company_id"];
+
+                        $category_id = (isset($match_category_ids[$old_category_id])) ? $match_category_ids[$old_category_id] : null;
+
+                        if(isset($match_company_ids[$old_company_id])) {
+                            $new_place = new Job_Model_Place();
+                            $new_place
+                                ->setData($place)
+                                ->unsData("place_id")
+                                ->unsData("id")
+                                ->setData("category_id", $category_id)
+                                ->setData("company_id", $match_company_ids[$old_company_id])
+                                ->_setIcon($place["icon"], $new_application_option)
+                                ->_setBanner($place["banner"], $new_application_option)
+                                ->save()
+                            ;
+
+                            $match_place_ids[$place["place_id"]] = $new_place->getId();
+                        } else {
+                            /** Log, no matching company */
+                        }
+
+                    }
+
+                } else {
+                    /** Log, empty categories */
+                }
+
+                /** Insert place contacts */
+                if(isset($dataset["place_contacts"]) && $new_job->getId()) {
+
+                    foreach($dataset["place_contacts"] as $place_contact) {
+
+                        $old_place_id = $place_contact["place_id"];
+
+                        if(isset($match_place_ids[$old_place_id])) {
+                            $new_place_contact = new Job_Model_PlaceContact();
+                            $new_place_contact
+                                ->setData($place_contact)
+                                ->unsData("place_contact_id")
+                                ->unsData("id")
+                                ->setData("place_id", $match_place_ids[$old_place_id])
+                                ->save()
+                            ;
+
+                        } else {
+                            /** Log, no matching place */
+                        }
+
+                    }
+
+                } else {
+                    /** Log, empty categories */
+                }
+
+            } else {
+                /** Log, empty feature/default */
+            }
+
+        } else {
+            throw new Exception("#087-02: Missing option, unable to import data.");
+        }
     }
 
 }

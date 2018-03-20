@@ -1,5 +1,16 @@
 <?php
 
+/**
+ * Class Media_Model_Library_Image
+ *
+ * @method string getLink()
+ * @method $this setLibraryId(integer $libraryId)
+ * @method $this setLink(string $link)
+ * @method $this setAppId(integer $appId)
+ * @method $this setPosition(integer $position)
+ * @method integr getPosition()
+ * @method Media_Model_Library_Image[] findAll($values = [], $order = null, $params = [])
+ */
 class Media_Model_Library_Image extends Core_Model_Default {
 
     const PATH = '/images/library';
