@@ -759,29 +759,33 @@ abstract class Core_Controller_Default_Abstract extends Zend_Controller_Action i
         exit();
     }
 
-    protected function _setBaseLayout($layout) {
+    protected function _setBaseLayout($layout)
+    {
         $this->_helper->layout()->setLayout($layout);
         return $this;
     }
 
-    protected function _isInstanceOfBackoffice() {
+    protected function _isInstanceOfBackoffice()
+    {
         return is_subclass_of($this, 'Backoffice_Controller_Default');
     }
 
     /**
      * @param $option
-     * @return string
      * @throws Exception
      */
-    public function exportAction() {
-        if($this->getCurrentOptionValue()) {
+    public function exportAction()
+    {
+        if ($this->getCurrentOptionValue()) {
+            $request = $this->getRequest();
+            $exportType = $this->getRequest()->getParam('export_type', null);
             $option = $this->getCurrentOptionValue();
-            if(Siberian_Exporter::isRegistered($option->getCode())) {
+            if (Siberian_Exporter::isRegistered($option->getCode())) {
                 $class = Siberian_Exporter::getClass($option->getCode());
                 $exporter = new $class();
-                $result = $exporter->exportAction($option);
+                $result = $exporter->exportAction($option, $exportType, $request);
 
-                $this->_download($result, $option->getCode()."-".date("Y-m-d_h-i-s").".yml", "text/x-yaml");
+                $this->_download($result, $option->getCode() . '-' . date("Y-m-d_h-i-s") . '.yml', 'text/x-yaml');
             }
         }
     }

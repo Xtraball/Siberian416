@@ -1,11 +1,11 @@
 <?php
 $option = $this->getOptionValue();
 
-if($option->getValueId() == "customer_account") {
+if ($option->getValueId() == "customer_account") {
     $library = new Media_Model_Library();
     $library->find("customer_account", "name");
 
-} elseif($option->getValueId() == "more_items") {
+} else if ($option->getValueId() == "more_items") {
     $library = new Media_Model_Library();
     $library->find("more_items", "name");
 
@@ -13,13 +13,13 @@ if($option->getValueId() == "customer_account") {
     $library = $option->getLibrary();
 }
 
-$available_icons = array($library->getIcons());
+$available_icons = [$library->getIcons()];
 
-if($option->getCode() == 'folder') {
+if (in_array($option->getCode(), ['folder', 'folder_v2'])) {
     $a_option = new Application_Model_Option();
     $options = $a_option->findAll();
-    foreach($options as $other_option) {
-        if($other_option->getCode() == 'folder') {
+    foreach ($options as $other_option) {
+        if (in_array($option->getCode(), ['folder', 'folder_v2'])) {
             continue;
         }
         $new_icons = $other_option->getLibrary()->getIcons();
@@ -36,7 +36,23 @@ $layout = $layout_model->find($layout_id);
 $use_subtitle = ($layout->getUseSubtitle());
 
 # Exporter
-$can_export = Siberian_Exporter::isRegistered($option->getCode()) && (APPLICATION_ENV != "production");
+$optionCode = $option->getCode();
+$canExport = Siberian_Exporter::isRegistered($optionCode) && (APPLICATION_ENV !== 'production');
+
+if ($canExport) {
+    try {
+        $exportForm = new Application_Form_ExportSingle();
+        $exportForm->setAction(__path($option->getDesktopUri() . 'export', [
+            'value_id' => $option->getId()
+        ]));
+        $exportForm->setExportOptions($option);
+    } catch (Exception $e) {
+        print_r($e->getMessage());
+        die(PHP_EOL . '<br />' .  __FILE__ . ' / ' . __LINE__);
+    }
+
+}
+
 $can_clearcache = Siberian_Cache::isRegistered($option->getCode()) && (APPLICATION_ENV != "production");
 
 $option_object = $option->getObject();
@@ -64,24 +80,37 @@ $application_offline_enabled = ($application->getOfflineContent() == 1);
 
         <?php echo __("Page settings"); ?>
 
-            <div class="action-buttons">
-                <?php if($can_export): ?>
-                    <button class="color-blue bt-header-right btn import-feature pull-right action-button">
-                        <a href="<?php echo $this->getUrl("{$option->getDesktopUri()}export", array("value_id" => $option->getId())); ?>">
-                            <?php echo __("Export") ?>
-                        </a>
-                    </button>
-                <?php endif; ?>
-                <?php if($can_clearcache): ?>
-                    <button class="color-blue bt-header-right btn import-feature pull-right action-button">
-                        <a class="clearcache" href="<?php echo $this->getUrl("{$option->getDesktopUri()}clearcache", array("value_id" => $option->getId())); ?>">
-                            <?php echo __("Clear cache") ?>
-                        </a>
-                    </button>
-                <?php endif; ?>
-            </div>
-
+        <div class="action-buttons">
+            <?php if($canExport): ?>
+                <button class="color-blue bt-header-right btn import-feature pull-right action-button">
+                    <a id="toggle-export"
+                       href="#toggle-export">
+                        <?php echo __("Export") ?>
+                    </a>
+                </button>
+            <?php endif; ?>
+            <?php if($can_clearcache): ?>
+                <button class="color-blue bt-header-right btn import-feature pull-right action-button">
+                    <a class="clearcache" href="<?php echo $this->getUrl("{$option->getDesktopUri()}clearcache", array("value_id" => $option->getId())); ?>">
+                        <?php echo __("Clear cache") ?>
+                    </a>
+                </button>
+            <?php endif; ?>
+        </div>
     </h3>
+
+    <?php if ($canExport): ?>
+    <div id="export-box"
+         class="hide container-fluid subcontent">
+        <h3 class="title-editor no-border-radius title-feature-indent"><?php echo __('Export settings') ?></h3>
+        <div class="content-color content-feature">
+            <div style="margin: 15px;">
+                <?php echo $exportForm; ?>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <div id="icon_and_name" class="icon_and_name container-fluid first-row-feature">
         <div class="row">
             <div class="<?php echo ($use_subtitle) ? "col-md-4 col-xs-4" : "col-md-6 col-xs-6 col-icon" ?>">
@@ -567,6 +596,15 @@ $application_offline_enabled = ($application->getOfflineContent() == 1);
         });
 
         //$(".partial-offline").tooltip({});
+
+
+        var exportAction= $('#toggle-export');
+
+        exportAction.off('click');
+        exportAction.on('click', function (event) {
+            event.preventDefault();
+            $('#export-box').toggleClass('hide');
+        });
 
     </script>
     <style>

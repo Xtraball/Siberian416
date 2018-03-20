@@ -424,13 +424,15 @@ class Wordpress_Model_Wordpress extends Core_Model_Default {
     }
 
     /**
-     * @param $option Application_Model_Option_Value
+     * @param $option
+     * @param null $exportType
+     * @param null $request
      * @return string
      * @throws Exception
      */
-    public function exportAction($option, $export_type = null) {
-        if($option && $option->getId()) {
-
+    public function exportAction($option, $exportType = null, $request = null)
+    {
+        if ($option && $option->getId()) {
             $current_option = $option;
             $value_id = $current_option->getId();
 
@@ -444,21 +446,21 @@ class Wordpress_Model_Wordpress extends Core_Model_Default {
                 "wp_id = ?" => $wordpress->getId(),
             ));
 
-            $wordpress_categories_data = array();
+            $wordpress_categories_data = [];
             foreach($wordpress_categories as $wordpress_category) {
                 $wordpress_categories_data[] = $wordpress_category->getData();
             }
 
             /** Find all wordpress_category */
-            $dataset = array(
+            $dataset = [
                 "option" => $current_option->forYaml(),
                 "wordpress" => $wordpress_data,
                 "wordpress_categories" => $wordpress_categories_data,
-            );
+            ];
 
             try {
                 $result = Siberian_Yaml::encode($dataset);
-            } catch(Exception $e) {
+            } catch (Exception $e) {
                 throw new Exception("#088-03: An error occured while exporting dataset to YAML.");
             }
 

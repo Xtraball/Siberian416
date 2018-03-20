@@ -996,7 +996,7 @@ class Application_Customization_FeaturesController extends Application_Controlle
         $template_version = $request->getParam("template_version", "1.0");
         $template_description = $request->getParam("template_description", __("My custom template"));
 
-        if($application_form_export->isValid($request->getParams())) {
+        if ($application_form_export->isValid($request->getParams())) {
             # Folder
             $folder_name = "export-app-".$application->getId()."-".date("Y-m-d_h-i-s")."-".uniqid();
             $tmp = Core_Model_Directory::getBasePathTo("var/tmp/");
@@ -1005,14 +1005,14 @@ class Application_Customization_FeaturesController extends Application_Controlle
             mkdir($options_directory, 0777, true);
 
             $selected_options = $request->getParam("options");
-            foreach($options as $option) {
-                if(isset($selected_options[$option->getId()]) && $selected_options[$option->getId()]) {
-                    if(Siberian_Exporter::isRegistered($option->getCode())) {
+            foreach ($options as $option) {
+                if (isset($selected_options[$option->getId()]) && $selected_options[$option->getId()]) {
+                    if (Siberian_Exporter::isRegistered($option->getCode())) {
                         $exporter_class = Siberian_Exporter::getClass($option->getCode());
-                        if(class_exists($exporter_class) && method_exists($exporter_class, "exportAction")) {
+                        if (class_exists($exporter_class) && method_exists($exporter_class, "exportAction")) {
                             $tmp_class = new $exporter_class();
-                            $export_type = $selected_options[$option->getId()];
-                            $dataset = $tmp_class->exportAction($option, $export_type);
+                            $exportType = $selected_options[$option->getId()];
+                            $dataset = $tmp_class->exportAction($option, $exportType);
                             file_put_contents("{$options_directory}/{$option->getPosition()}-{$option->getCode()}.yml", $dataset);
                         }
                     }

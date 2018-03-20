@@ -98,11 +98,14 @@ class Weblink_Model_Weblink extends Core_Model_Default {
     }
 
     /**
-     * @param $option Application_Model_Option_Value
+     * @param $option
+     * @param null $exportType
+     * @param null $request
      * @return string
      * @throws Exception
      */
-    public function exportAction($option) {
+    public function exportAction($option, $exportType = null, $request = null)
+    {
         if($option && $option->getId()) {
 
             $current_option = $option;

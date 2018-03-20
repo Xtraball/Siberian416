@@ -428,7 +428,8 @@ abstract class Siberian_Form_Abstract extends Zend_Form {
      * @return Siberian_Form_Element_Select
      * @throws Zend_Form_Exception
      */
-    public function addSimpleSelect($name, $label = "", $options = array()) {
+    public function addSimpleSelect($name, $label = '', $options = [])
+    {
         $el = new Siberian_Form_Element_Select($name);
         $this->addElement($el);
         $el->setIsFormHorizontal($this->is_form_horizontal);
@@ -436,8 +437,7 @@ abstract class Siberian_Form_Abstract extends Zend_Form {
         $el
             ->setNewDesign()
             ->setLabel($label)
-            ->setMultiOptions($options)
-        ;
+            ->setMultiOptions($options);
         return $el;
     }
 
@@ -719,13 +719,14 @@ abstract class Siberian_Form_Abstract extends Zend_Form {
      * @return Zend_Form
      * @throws Zend_Form_Exception
      */
-    public function groupElements($name, $elements, $label = "") {
-        $display_group = $this->addDisplayGroup($elements, $name);
-        $fieldset = $this->getDisplayGroup($name)->getDecorator("Fieldset")
-            ->setLegend($label)
-        ;
+    public function groupElements($name, $elements, $label = '') {
+        $displayGroup = $this->addDisplayGroup($elements, $name);
+        $fieldset = $this
+            ->getDisplayGroup($name)
+            ->getDecorator('Fieldset')
+            ->setLegend($label);
 
-        return $display_group;
+        return $displayGroup;
     }
 
     /**

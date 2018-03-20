@@ -27,10 +27,13 @@ class Job_Model_Job extends Core_Model_Default {
 
     /**
      * @param $option
+     * @param null $exportType
+     * @param null $request
      * @return string
      * @throws Exception
      */
-    public function exportAction($option, $export_type = null) {
+    public function exportAction($option, $exportType = null, $request = null)
+    {
         if($option && $option->getId()) {
 
             $current_option = $option;

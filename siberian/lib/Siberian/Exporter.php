@@ -3,36 +3,35 @@
 /**
  * Class Siberian_Exporter
  *
- * @id 1000
- *
- * @version 4.6.5
- *
+ * Release <4.13.9>
  */
+class Siberian_Exporter
+{
 
-class Siberian_Exporter {
-
-    const FLAVOR = "1.0";
-    const MIN_VERSION = "4.7.0";
+    const FLAVOR = '1.1';
+    const MIN_VERSION = '4.13.9';
 
     /**
      * Declared exporters for features
      *
      * @var array
      */
-    public static $registered_exporters = array();
+    public static $registered_exporters = [];
 
     /**
      * Declared exporter options
      *
      * @var array
      */
-    public static $registered_options = array();
+    public static $registered_options = [];
 
     /**
      * @param $feature
      * @param $classname
+     * @param null $options
      */
-    public static function register($feature, $classname, $options = null) {
+    public static function register($feature, $classname, $options = null)
+    {
         if(!isset(self::$registered_exporters[$feature])) {
             self::$registered_exporters[$feature] = $classname;
 
@@ -46,7 +45,8 @@ class Siberian_Exporter {
      * @param $feature
      * @return bool
      */
-    public static function isRegistered($feature) {
+    public static function isRegistered($feature)
+    {
         return (isset(self::$registered_exporters[$feature]));
     }
 
@@ -54,7 +54,8 @@ class Siberian_Exporter {
      * @param $feature
      * @return mixed
      */
-    public static function getClass($feature) {
+    public static function getClass($feature)
+    {
         return self::$registered_exporters[$feature];
     }
 
@@ -62,7 +63,8 @@ class Siberian_Exporter {
      * @param $feature
      * @return mixed
      */
-    public static function hasOptions($feature) {
+    public static function hasOptions($feature)
+    {
         return (isset(self::$registered_options[$feature]));
     }
 
@@ -70,7 +72,8 @@ class Siberian_Exporter {
      * @param $feature
      * @return mixed
      */
-    public static function getOptions($feature) {
+    public static function getOptions($feature)
+    {
         return self::$registered_options[$feature];
     }
 }

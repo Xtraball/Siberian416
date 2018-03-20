@@ -590,12 +590,16 @@ class Folder_Model_Folder extends Core_Model_Default {
     /**
      * @param $option
      * @param null $exportType
+     * @param null $request
      * @return string
      * @throws Exception
      */
-    public function exportAction($option, $exportType = null)
+    public function exportAction($option, $exportType = null, $request = null)
     {
-        // $exportType all|tree-only
+        $featuresOptions = [];
+        if ($exportType === 'all') {
+            $featuresOptions = $request->getParam('export_type_feature', []);
+        }
 
         if ($option && $option->getId()) {
             $currentOption = $option;
@@ -607,26 +611,58 @@ class Folder_Model_Folder extends Core_Model_Default {
 
             // Fetch all the subfolders!
             $subFolders = [];
+            $rootCategory = $folder->getRootCategory();
             (new Folder_Model_Folder())
-                ->_getAllChildren($folder->getRootCategory(), $subFolders);
+                ->_getAllChildren($rootCategory, $subFolders);
 
             $flattenSubfolders = [];
+            $flattenSubfolders[] = $rootCategory->getData();
             foreach ($subFolders as $subFolder) {
                 $flattenSubfolders[] = $subFolder->getData();
             }
 
-            // Fetch all sub-features!
+            $subFeatures = [];
 
+            // Export subfeatures only if selected!
+            if ($exportType !== 'tree-only') { // value can be all|tree-only
+                // Fetch all sub-features!
+                $features = (new Application_Model_Option_Value())
+                    ->findAll(
+                        [
+                            'folder_id' => $valueId, // Yes strange, folder_id is not folder_id but the value_id ...!
+                        ]
+                    );
+
+                foreach ($features as $feature) {
+                    $option = (new Application_Model_Option())
+                        ->find($feature->getOptionId(), 'option_id');
+
+                    if ($option->getId() && (Siberian_Exporter::isRegistered($option->getCode()))) {
+                        $exportClass = Siberian_Exporter::getClass($option->getCode());
+
+                        $exportType = null;
+                        if (array_key_exists($feature->getValueId(), $featuresOptions)) {
+                            $exportType = $featuresOptions[$feature->getValueId()];
+                        }
+
+                        $result = (new $exportClass())
+                            ->exportAction($feature, $exportType);
+
+                        $subFeatures[$feature->getValueId()] = Siberian_Yaml::decode($result);
+                    }
+                }
+            }
 
             $dataSet = [
                 'option' => $currentOption->getData(),
                 'folder' => $folder->getData(),
                 'subfolders' => $flattenSubfolders,
+                'subfeatures' => $subFeatures,
             ];
 
             try {
                 $result = Siberian_Yaml::encode($dataSet);
-            } catch(Exception $e) {
+            } catch (Exception $e) {
                 throw new Exception("#XXX-01: An error occured while exporting dataset to YAML.");
             }
 
@@ -641,145 +677,153 @@ class Folder_Model_Folder extends Core_Model_Default {
      * @param $path
      * @throws Exception
      */
-    public function importAction($path) {
+    public function importAction($path)
+    {
         $content = file_get_contents($path);
 
         try {
             $dataset = Siberian_Yaml::decode($content);
         } catch(Exception $e) {
-            throw new Exception("#087-04: An error occured while importing YAML dataset '$path'.");
+            throw new Exception("#XXX-03: An error occured while importing YAML dataset '$path'.");
         }
 
         $application = $this->getApplication();
+        $appId = $application->getId();
 
-        $application_option = new Application_Model_Option_Value();
-        $job_model = new Job_Model_Job();
+        $folderV2 = (new Application_Model_Option())
+            ->find('folder_v2', 'code');
 
-        if(isset($dataset["option"])) {
-            $new_application_option = $application_option
-                ->setData($dataset["option"])
-                ->unsData("value_id")
-                ->unsData("id")
-                ->setData('app_id', $application->getId())
-                ->save()
-            ;
+        $optionId = $folderV2->getId();
 
-            $new_value_id = $new_application_option->getId();
+        if (isset($dataset['option'])) {
+            $newApplicationOption = (new Application_Model_Option_Value());
+            $newApplicationOption
+                ->setData($dataset['option'])
+                ->unsData('value_id')
+                ->unsData('id')
+                ->setData('app_id', $appId)
+                ->setData('option_id', $optionId) // We are forcing all folder imports to folder_v2!
+                ->save();
 
-            /** Create Job/Options */
-            if(isset($dataset["job"]) && $new_value_id) {
-                $new_job = $job_model
-                    ->setData($dataset["job"])
-                    ->unsData("job_id")
-                    ->unsData("id")
-                    ->setData("value_id", $new_value_id)
-                    ->save()
-                ;
+            $newValueId = $newApplicationOption->getId();
 
-                /** Insert categories */
-                $match_category_ids = array();
-                if(isset($dataset["categories"]) && $new_job->getId()) {
-
-                    foreach($dataset["categories"] as $category) {
-
-                        $new_category = new Job_Model_Category();
-                        $new_category
-                            ->setData($category)
-                            ->unsData("category_id")
-                            ->unsData("id")
-                            ->setData("job_id", $new_job->getId())
-                            ->_setIcon($category["icon"], $new_application_option)
-                            ->save()
-                        ;
-
-                        $match_category_ids[$category["category_id"]] = $new_category->getId();
-                    }
-
-                } else {
-                    /** Log, empty categories */
-                }
-
-                /** Insert companies */
-                $match_company_ids = array();
-                if(isset($dataset["companies"]) && $new_job->getId()) {
-
-                    foreach($dataset["companies"] as $company) {
-
-                        $new_company = new Job_Model_Company();
-                        $new_company
-                            ->setData($company)
-                            ->unsData("company_id")
-                            ->unsData("id")
-                            ->unsData("administrators") /** clear admins */
-                            ->setData("job_id", $new_job->getId())
-                            ->_setLogo($company["logo"], $new_application_option)
-                            ->_setHeader($company["header"], $new_application_option)
-                            ->save()
-                        ;
-
-                        $match_company_ids[$company["company_id"]] = $new_company->getId();
-                    }
-
-                } else {
-                    /** Log, empty categories */
-                }
-
-                /** Insert places */
-                $match_place_ids = array();
-                if(isset($dataset["places"]) && $new_job->getId()) {
-
-                    foreach($dataset["places"] as $place) {
-
-                        $old_category_id = $place["category_id"];
-                        $old_company_id = $place["company_id"];
-
-                        $category_id = (isset($match_category_ids[$old_category_id])) ? $match_category_ids[$old_category_id] : null;
-
-                        if(isset($match_company_ids[$old_company_id])) {
-                            $new_place = new Job_Model_Place();
-                            $new_place
-                                ->setData($place)
-                                ->unsData("place_id")
-                                ->unsData("id")
-                                ->setData("category_id", $category_id)
-                                ->setData("company_id", $match_company_ids[$old_company_id])
-                                ->_setIcon($place["icon"], $new_application_option)
-                                ->_setBanner($place["banner"], $new_application_option)
-                                ->save()
-                            ;
-
-                            $match_place_ids[$place["place_id"]] = $new_place->getId();
+            // Create the main Folder!
+            if (isset($dataset['folder']) && $newValueId) {
+                // Insert folder categories!
+                $matchFolderCategoryIds = [];
+                $rootCategory = null;
+                if (isset($dataset['subfolders'])) {
+                    // Recursively rebuild sub-tree!
+                    foreach ($dataset['subfolders'] as $subfolder) {
+                        if (is_null($subfolder['parent_id'])) {
+                            $rootCategory = $subfolder;
                         } else {
-                            /** Log, no matching company */
+                            if (!isset($matchFolderCategoryIds[$subfolder['parent_id']])) {
+                                $matchFolderCategoryIds[$subfolder['parent_id']] = [];
+                            }
+                            $matchFolderCategoryIds[$subfolder['parent_id']][] = $subfolder;
+                        }
+                    }
+
+                    /**
+                     * Recursive bind to re-create all the features
+                     *
+                     * @param $folder
+                     * @param $subfolders
+                     * @param $parentId
+                     * @param $valueId
+                     *
+                     * @return integer $rootCategoryId
+                     */
+                    function createSubTree ($folder,
+                                            $subfolders,
+                                            $parentId,
+                                            $valueId,
+                                            $newApplicationOption,
+                                            &$matchOldNewCategoryId,
+                                            $rootCategoryId = null) {
+                        $newFolderCategory = (new Folder2_Model_Category())
+                            ->setData($folder)
+                            ->unsData('category_id')
+                            ->unsData('id')
+                            ->setData('parent_id', $parentId)
+                            ->setData('value_id', $valueId)
+                            ->setData('version', 2)
+                            ->setDefaultImages($newApplicationOption)
+                            ->save();
+
+                        $oldCategoryId = $folder['category_id'];
+                        $matchOldNewCategoryId[$oldCategoryId] = $newFolderCategory->getId();
+
+                        if ($rootCategoryId === null) {
+                            $rootCategoryId = $newFolderCategory->getId();
                         }
 
-                    }
+                        if (array_key_exists($folder['category_id'], $subfolders)) {
+                            $currentChilds = $subfolders[$folder['category_id']];
 
-                } else {
-                    /** Log, empty categories */
-                }
-
-                /** Insert place contacts */
-                if(isset($dataset["place_contacts"]) && $new_job->getId()) {
-
-                    foreach($dataset["place_contacts"] as $place_contact) {
-
-                        $old_place_id = $place_contact["place_id"];
-
-                        if(isset($match_place_ids[$old_place_id])) {
-                            $new_place_contact = new Job_Model_PlaceContact();
-                            $new_place_contact
-                                ->setData($place_contact)
-                                ->unsData("place_contact_id")
-                                ->unsData("id")
-                                ->setData("place_id", $match_place_ids[$old_place_id])
-                                ->save()
-                            ;
-
-                        } else {
-                            /** Log, no matching place */
+                            foreach ($currentChilds as $currentChild) {
+                                $rootCategoryId = createSubTree(
+                                    $currentChild,
+                                    $subfolders,
+                                    $newFolderCategory->getId(),
+                                    $valueId,
+                                    $newApplicationOption,
+                                    $matchOldNewCategoryId,
+                                    $rootCategoryId);
+                            }
                         }
 
+                        return $rootCategoryId;
+                    }
+
+                    $matchOldNewCategoryId = [];
+                    $rootCategoryId = createSubTree(
+                        $rootCategory,
+                        $matchFolderCategoryIds,
+                        null,
+                        $newValueId,
+                        $newApplicationOption,
+                        $matchOldNewCategoryId,
+                        null);
+
+                    // Then create the folder!
+                    $newFolder = (new Folder2_Model_Folder())
+                        ->setData($dataset['folder'])
+                        ->unsData('folder_id')
+                        ->unsData('id')
+                        ->setData('root_category_id', $rootCategoryId)
+                        ->setData('value_id', $newValueId)
+                        ->setData('version', 2)
+                        ->save();
+
+                    // And if required, import sub-features!
+                    if (isset($dataset['subfeatures'])) {
+                        $newFeatures = [];
+                        foreach ($dataset['subfeatures'] as $feature) {
+                            // First we update folder_id & folder_category_id
+                            $oldCategoryId = $feature['option']['folder_category_id'];
+                            $newCategoryId = $matchOldNewCategoryId[$oldCategoryId];
+
+                            $feature['option']['folder_category_id'] = $newCategoryId;
+                            $feature['option']['folder_id'] = $newValueId;
+
+                            $newFeatures[] = $feature;
+                        }
+
+                        foreach ($newFeatures as $newFeature) {
+                            $optionCode = $newFeature['option']['code'];
+                            $newFeatureOption = (new Application_Model_Option())
+                                ->find($optionCode, 'code');
+
+                            // Then import if applicable!
+                            if (Siberian_Exporter::isRegistered($optionCode) && $newFeatureOption->getId()) {
+                                $importerClass = Siberian_Exporter::getClass($optionCode);
+                                $rawDataYaml = Siberian_Yaml::encode($newFeature);
+                                (new $importerClass())
+                                    ->importAction($rawDataYaml);
+                            }
+                        }
                     }
 
                 } else {
@@ -791,7 +835,7 @@ class Folder_Model_Folder extends Core_Model_Default {
             }
 
         } else {
-            throw new Exception("#087-02: Missing option, unable to import data.");
+            throw new Exception("#XXX-04: Missing option, unable to import data.");
         }
     }
 

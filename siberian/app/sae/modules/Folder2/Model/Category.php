@@ -95,9 +95,13 @@ class Folder2_Model_Category extends Core_Model_Default {
         $image->zoomCrop(512, 512, 0, 0);
         $image->save(Application_Model_Application::getBaseImagePath() . $thumbnailFile, 'png', 100);
 
-        $this
-            ->setPicture($pictureFile)
-            ->setThumbnail($thumbnailFile)
-            ->save();
+        // Default images only if empty!
+        if (empty($this->getPicture())) {
+            $this->setPicture($pictureFile);
+        }
+        if (empty($this->getThumbnail())) {
+            $this->setThumbnail($thumbnailFile);
+        }
+        return $this->save();
     }
 }

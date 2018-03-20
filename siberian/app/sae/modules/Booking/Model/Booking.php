@@ -93,11 +93,14 @@ class Booking_Model_Booking extends Core_Model_Default {
     }
 
     /**
-     * @param $option Application_Model_Option_Value
+     * @param $option
+     * @param null $exportType
+     * @param null $request
      * @return string
      * @throws Exception
      */
-    public function exportAction($option, $export_type = null) {
+    public function exportAction($option, $exportType = null, $request = null)
+    {
         if($option && $option->getId()) {
 
             $current_option = $option;
@@ -116,7 +119,7 @@ class Booking_Model_Booking extends Core_Model_Default {
             foreach($stores as $store) {
                 $store_data = $store->getData();
 
-                if($export_type === "safe") {
+                if($exportType === "safe") {
                     $store_data["store_name"] = "Praesent sed neque.";
                     $store_data["email"] = "test@lorem-ipsum.test";
                 }
@@ -144,16 +147,20 @@ class Booking_Model_Booking extends Core_Model_Default {
     }
 
     /**
-     * @param $path
+     * @param string $pathOrRawData
      * @throws Exception
      */
-    public function importAction($path) {
-        $content = file_get_contents($path);
+    public function importAction($pathOrRawData) {
+        if (is_file($pathOrRawData)) {
+            $content = file_get_contents($pathOrRawData);
+        } else {
+            $content = $pathOrRawData;
+        }
 
         try {
             $dataset = Siberian_Yaml::decode($content);
         } catch(Exception $e) {
-            throw new Exception("#100-03: An error occured while importing YAML dataset '$path'.");
+            throw new Exception("#100-03: An error occured while importing YAML dataset '$pathOrRawData'.");
         }
 
         $application = $this->getApplication();

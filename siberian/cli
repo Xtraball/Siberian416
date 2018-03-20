@@ -74,6 +74,19 @@ if(isset($argv[1])) {
                     'const VERSION = \'' . $argv[2] . '\';', $versionContent);
                 file_put_contents('./lib/Siberian/Version.php', $versionContent);
             break;
+        case 'feature:import':
+            if (isset($argv[2], $argv[3], $argv[4])) {
+                //
+                $model = new $argv[2]();
+                define('APP_ID', $argv[3]);
+                $application = (new Application_Model_Application())
+                    ->find($argv[3]);
+                Application_Model_Application::setApplication($application);
+                $model->importAction($argv[4]);
+            } else {
+                echo 'Missing parameters, model & file.' . PHP_EOL;
+            }
+            break;
         case 'dev':
         case 'development':
             $configContent = file_get_contents('./config.php');
