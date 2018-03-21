@@ -280,58 +280,258 @@ class Folder2_Model_Folder extends Core_Model_Default {
 
     /**
      * @param $option
-     * @param null $parentId
-     * @return $this
+     * @param null $exportType
+     * @param null $request
+     * @return string
+     * @throws Exception
      */
-    public function copyTo($option, $parentId = null)
+    public function exportAction($option, $exportType = null, $request = null)
     {
-        $rootCategory = (new Folder2_Model_Category())
-            ->find($this->getRootCategoryId());
+        $featuresOptions = [];
+        if ($exportType === 'all') {
+            $featuresOptions = $request->getParam('export_type_feature', []);
+        }
 
-        $this->copyCategoryTo($option, $rootCategory);
+        if ($option && $option->getId()) {
+            $currentOption = $option;
+            $valueId = $currentOption->getId();
 
-        $this
-            ->setId(null)
-            ->setValueId($option->getId())
-            ->setRootCategoryId($rootCategory->getId())
-            ->save();
+            // Fetch the folder!
+            $folder = (new Folder2_Model_Folder())
+                ->find($valueId, 'value_id');
 
-        return $this;
+            // Fetch all the subfolders!
+            $subFolders = (new Folder2_Model_Category())
+                ->findAll(
+                    [
+                        'value_id' => $valueId,
+                    ]
+                );
+
+            $flattenSubfolders = [];
+            foreach ($subFolders as $subFolder) {
+                $flattenSubfolders[] = $subFolder->getData();
+            }
+
+            $subFeatures = [];
+
+            // Export subfeatures only if selected!
+            if ($exportType !== 'tree-only') { // value can be all|tree-only
+                // Fetch all sub-features!
+                $features = (new Application_Model_Option_Value())
+                    ->findAll(
+                        [
+                            'folder_id' => $valueId, // Yes strange, folder_id is not folder_id but the value_id ...!
+                        ]
+                    );
+
+                foreach ($features as $feature) {
+                    $option = (new Application_Model_Option())
+                        ->find($feature->getOptionId(), 'option_id');
+
+                    if ($option->getId() && (Siberian_Exporter::isRegistered($option->getCode()))) {
+                        $exportClass = Siberian_Exporter::getClass($option->getCode());
+
+                        $exportType = null;
+                        if (array_key_exists($feature->getValueId(), $featuresOptions)) {
+                            $exportType = $featuresOptions[$feature->getValueId()];
+                        }
+
+                        $result = (new $exportClass())
+                            ->exportAction($feature, $exportType);
+
+                        $subFeatures[$feature->getValueId()] = Siberian_Yaml::decode($result);
+                    }
+                }
+            }
+
+            $dataSet = [
+                'option' => $currentOption->getData(),
+                'folder' => $folder->getData(),
+                'subfolders' => $flattenSubfolders,
+                'subfeatures' => $subFeatures,
+            ];
+
+            try {
+                $result = Siberian_Yaml::encode($dataSet);
+            } catch (Exception $e) {
+                throw new Exception("#XXX-01: An error occured while exporting dataset to YAML.");
+            }
+
+            return $result;
+
+        } else {
+            throw new Exception("#XXX-02: Unable to export the feature, non-existing id.");
+        }
     }
 
     /**
-     * @param $option
-     * @param $category
-     * @param null $parentId
-     * @return $this
+     * @param string $pathOrRawData
+     * @throws Exception
      */
-    public function copyCategoryTo($option, $category, $parentId = null)
+    public function importAction($pathOrRawData)
     {
-        $children = $category->getChildren();
-        $optionValues = (new Application_Model_Option_Value())
-            ->findAll(
-                [
-                    'app_id' => $option->getAppId(),
-                    'folder_category_id' => $category->getId()
-                ],
-                ['folder_category_position ASC']
-            );
+        if (is_file($pathOrRawData)) {
+            $content = file_get_contents($pathOrRawData);
+        } else {
+            $content = $pathOrRawData;
+        }
 
-        $category
-            ->setId(null)
-            ->setParentId($parentId)
-            ->save();
+        try {
+            $dataset = Siberian_Yaml::decode($content);
+        } catch(Exception $e) {
+            throw new Exception("#XXX-03: An error occured while importing YAML dataset '$pathOrRawData'.");
+        }
 
-        foreach ($optionValues as $optionValue) {
-            $optionValue
-                ->setFolderCategoryId($category->getId())
+        $application = $this->getApplication();
+        $appId = $application->getId();
+
+        $folderV2 = (new Application_Model_Option())
+            ->find('folder_v2', 'code');
+
+        $optionId = $folderV2->getId();
+
+        if (isset($dataset['option'])) {
+            $newApplicationOption = (new Application_Model_Option_Value());
+            $newApplicationOption
+                ->setData($dataset['option'])
+                ->unsData('value_id')
+                ->unsData('id')
+                ->setData('app_id', $appId)
+                ->setData('option_id', $optionId) // We are forcing all folder imports to folder_v2!
                 ->save();
-        }
 
-        foreach ($children as $child) {
-            $this->copyCategoryTo($option, $child, $category->getId());
-        }
+            $newValueId = $newApplicationOption->getId();
 
-        return $this;
+            // Create the main Folder!
+            if (isset($dataset['folder']) && $newValueId) {
+                // Insert folder categories!
+                $matchFolderCategoryIds = [];
+                $rootCategory = null;
+                if (isset($dataset['subfolders'])) {
+                    // Recursively rebuild sub-tree!
+                    foreach ($dataset['subfolders'] as $subfolder) {
+                        if (is_null($subfolder['parent_id'])) {
+                            $rootCategory = $subfolder;
+                        } else {
+                            if (!isset($matchFolderCategoryIds[$subfolder['parent_id']])) {
+                                $matchFolderCategoryIds[$subfolder['parent_id']] = [];
+                            }
+                            $matchFolderCategoryIds[$subfolder['parent_id']][] = $subfolder;
+                        }
+                    }
+
+                    /**
+                     * Recursive bind to re-create all the features
+                     *
+                     * @param $folder
+                     * @param $subfolders
+                     * @param $parentId
+                     * @param $valueId
+                     *
+                     * @return integer $rootCategoryId
+                     */
+                    function createSubTree ($folder,
+                                            $subfolders,
+                                            $parentId,
+                                            $valueId,
+                                            $newApplicationOption,
+                                            &$matchOldNewCategoryId,
+                                            $rootCategoryId = null) {
+                        $newFolderCategory = (new Folder2_Model_Category())
+                            ->setData($folder)
+                            ->unsData('category_id')
+                            ->unsData('id')
+                            ->setData('parent_id', $parentId)
+                            ->setData('value_id', $valueId)
+                            ->setData('version', 2)
+                            ->setDefaultImages($newApplicationOption)
+                            ->save();
+
+                        $oldCategoryId = $folder['category_id'];
+                        $matchOldNewCategoryId[$oldCategoryId] = $newFolderCategory->getId();
+
+                        if ($rootCategoryId === null) {
+                            $rootCategoryId = $newFolderCategory->getId();
+                        }
+
+                        if (array_key_exists($folder['category_id'], $subfolders)) {
+                            $currentChilds = $subfolders[$folder['category_id']];
+
+                            foreach ($currentChilds as $currentChild) {
+                                $rootCategoryId = createSubTree(
+                                    $currentChild,
+                                    $subfolders,
+                                    $newFolderCategory->getId(),
+                                    $valueId,
+                                    $newApplicationOption,
+                                    $matchOldNewCategoryId,
+                                    $rootCategoryId);
+                            }
+                        }
+
+                        return $rootCategoryId;
+                    }
+
+                    $matchOldNewCategoryId = [];
+                    $rootCategoryId = createSubTree(
+                        $rootCategory,
+                        $matchFolderCategoryIds,
+                        null,
+                        $newValueId,
+                        $newApplicationOption,
+                        $matchOldNewCategoryId,
+                        null);
+
+                    // Then create the folder!
+                    $newFolder = (new Folder2_Model_Folder())
+                        ->setData($dataset['folder'])
+                        ->unsData('folder_id')
+                        ->unsData('id')
+                        ->setData('root_category_id', $rootCategoryId)
+                        ->setData('value_id', $newValueId)
+                        ->setData('version', 2)
+                        ->save();
+
+                    // And if required, import sub-features!
+                    if (isset($dataset['subfeatures'])) {
+                        $newFeatures = [];
+                        foreach ($dataset['subfeatures'] as $feature) {
+                            // First we update folder_id & folder_category_id
+                            $oldCategoryId = $feature['option']['folder_category_id'];
+                            $newCategoryId = $matchOldNewCategoryId[$oldCategoryId];
+
+                            $feature['option']['folder_category_id'] = $newCategoryId;
+                            $feature['option']['folder_id'] = $newValueId;
+
+                            $newFeatures[] = $feature;
+                        }
+
+                        foreach ($newFeatures as $newFeature) {
+                            $optionCode = $newFeature['option']['code'];
+                            $newFeatureOption = (new Application_Model_Option())
+                                ->find($optionCode, 'code');
+
+                            // Then import if applicable!
+                            if (Siberian_Exporter::isRegistered($optionCode) && $newFeatureOption->getId()) {
+                                $importerClass = Siberian_Exporter::getClass($optionCode);
+                                $rawDataYaml = Siberian_Yaml::encode($newFeature);
+                                (new $importerClass())
+                                    ->importAction($rawDataYaml);
+                            }
+                        }
+                    }
+
+                } else {
+                    /** Log, empty categories */
+                }
+
+            } else {
+                /** Log, empty feature/default */
+            }
+
+        } else {
+            throw new Exception("#XXX-04: Missing option, unable to import data.");
+        }
     }
 }

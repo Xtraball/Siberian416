@@ -150,16 +150,21 @@ class Promotion_Model_Promotion extends Core_Model_Default
     }
 
     /**
-     * @param $path
+     * @param string $pathOrRawData
      * @throws Exception
      */
-    public function importAction($path) {
-        $content = file_get_contents($path);
+    public function importAction($pathOrRawData)
+    {
+        if (is_file($pathOrRawData)) {
+            $content = file_get_contents($pathOrRawData);
+        } else {
+            $content = $pathOrRawData;
+        }
 
         try {
             $dataset = Siberian_Yaml::decode($content);
         } catch(Exception $e) {
-            throw new Exception("#088-04: An error occured while importing YAML dataset '$path'.");
+            throw new Exception("#088-04: An error occured while importing YAML dataset '$pathOrRawData'.");
         }
 
         $application = $this->getApplication();

@@ -53,10 +53,10 @@ class Application_Form_ExportSingle extends Siberian_Form_Abstract
                             $subfeature->getTabbarName(),
                             $featureOptions)
                         ->setBelongsTo('export_type_feature');
+                    $subFeaturesGroup[] = $selectName;
                 } else {
                     // We do not display sub-features without options
                 }
-                $subFeaturesGroup[] = $subfeature->getId();
             }
 
             if (!empty($subFeaturesGroup)) {

@@ -4,7 +4,7 @@
  */
 $init = function($bootstrap) {
     // Exporter!
-    Siberian_Exporter::register('booking', 'Booking_Model_Booking', [
+    Siberian_Exporter::register('contact', 'Contact_Model_Contact', [
         'all' => __('All data'),
         'safe' => __('Clean-up sensible data'),
     ]);

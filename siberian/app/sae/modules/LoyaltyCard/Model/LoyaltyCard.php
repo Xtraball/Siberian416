@@ -98,7 +98,8 @@ class LoyaltyCard_Model_LoyaltyCard extends Core_Model_Default
      * @param string $pathOrRawData
      * @throws Exception
      */
-    public function importAction($pathOrRawData) {
+    public function importAction($pathOrRawData)
+    {
         if (is_file($pathOrRawData)) {
             $content = file_get_contents($pathOrRawData);
         } else {

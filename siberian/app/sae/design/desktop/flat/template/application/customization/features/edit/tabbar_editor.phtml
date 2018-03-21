@@ -47,8 +47,7 @@ if ($canExport) {
         ]));
         $exportForm->setExportOptions($option);
     } catch (Exception $e) {
-        print_r($e->getMessage());
-        die(PHP_EOL . '<br />' .  __FILE__ . ' / ' . __LINE__);
+        // Do nothing! ...
     }
 
 }

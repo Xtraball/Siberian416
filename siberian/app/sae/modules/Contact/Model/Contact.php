@@ -10,7 +10,7 @@ class Contact_Model_Contact extends Core_Model_Default {
 
     protected $_is_cacheable = true;
 
-    public function __construct($params = array()) {
+    public function __construct($params = []) {
         parent::__construct($params);
         $this->_db_table = 'Contact_Model_Db_Table_Contact';
         return $this;
@@ -188,36 +188,109 @@ class Contact_Model_Contact extends Core_Model_Default {
         return '';
     }
 
-    public function copyTo($option) {
 
-        $this->setId(null)
-            ->setValueId($option->getId())
-        ;
+    /**
+     * @param $option
+     * @param null $exportType
+     * @param null $request
+     * @return string
+     * @throws Exception
+     */
+    public function exportAction($option, $exportType = null, $request = null)
+    {
+        if ($option && $option->getId()) {
 
-        if($image_url = $this->getCoverUrl()) {
+            $currentOption = $option;
 
-            $file = pathinfo($image_url);
-            $filename = $file['basename'];
+            $contact = (new Contact_Model_Contact())
+                ->find($currentOption->getId(), 'value_id');
 
-            $relativePath = $option->getImagePathTo();
-            $folder = Core_Model_Directory::getBasePathTo(Application_Model_Application::PATH_IMAGE.'/'.$relativePath);
-
-            if(!is_dir($folder)) {
-                mkdir($folder, 0777, true);
+            $contactData = $contact->getData();
+            switch ($exportType) {
+                case 'safe':
+                        $contactData['name'] = 'John DOE';
+                        $contactData['description'] = 'A fictitious name used in legal documents for an unknown or anonymous male person.';
+                        $contactData['facebook'] = 'https://www.facebook.com/john.doe';
+                        $contactData['twitter'] = 'https://twitter.com/john.doe';
+                        $contactData['website'] = 'https://john-doe.com';
+                        $contactData['cover'] = null;
+                        $contactData['email'] = 'john.doe@example.com';
+                        $contactData['civility'] = 'Mr.';
+                        $contactData['firstname'] = 'John';
+                        $contactData['street'] = 'Paradise Avenue';
+                        $contactData['postcode'] = '1337';
+                        $contactData['city'] = 'Nowhere';
+                        $contactData['latitude'] = null;
+                        $contactData['longitude'] = null;
+                        $contactData['phone'] = '0987654321';
+                    break;
             }
 
-            $img_src = Core_Model_Directory::getBasePathTo($image_url);
-            $img_dst = $folder.'/'.$filename;
+            $dataset = [
+                'option' => $currentOption->forYaml(),
+                'contact' => $contactData,
+            ];
 
-            if(copy($img_src, $img_dst)) {
-                $this->setCover($relativePath.'/'.$filename);
+            try {
+                $result = Siberian_Yaml::encode($dataset);
+            } catch(Exception $e) {
+                throw new Exception("#CONTACT-01: An error occured while exporting dataset to YAML.");
             }
+
+            return $result;
+
+        } else {
+            throw new Exception("#CONTACT-02: Unable to export the feature, non-existing id.");
+        }
+    }
+
+    /**
+     * @param string $pathOrRawData
+     * @throws Exception
+     */
+    public function importAction($pathOrRawData)
+    {
+        if (is_file($pathOrRawData)) {
+            $content = file_get_contents($pathOrRawData);
+        } else {
+            $content = $pathOrRawData;
         }
 
-        $this->save();
+        try {
+            $dataset = Siberian_Yaml::decode($content);
+        } catch(Exception $e) {
+            throw new Exception("#CONTACT-03: An error occured while importing YAML dataset '$pathOrRawData'.");
+        }
 
-        return $this;
+        $application = $this->getApplication();
+        $applicationOption = new Application_Model_Option_Value();
 
+        if (isset($dataset['option'])) {
+
+            $realOption = (new Application_Model_Option())
+                ->find($dataset['option']['code'], 'code');
+
+            $newApplicationOption = $applicationOption
+                ->setData($dataset['option'])
+                ->setData('option_id', $realOption->getId())
+                ->unsData('value_id')
+                ->unsData('id')
+                ->setData('app_id', $application->getId())
+                ->save();
+
+                if (isset($dataset['contact'])) {
+                    (new Contact_Model_Contact())
+                        ->setData($dataset['contact'])
+                        ->unsData('contact_id')
+                        ->unsData('value_id')
+                        ->unsData('id')
+                        ->setData('value_id', $newApplicationOption->getId())
+                        ->save();
+                }
+            ;
+        } else {
+            throw new Exception("#CONTACT-04: Missing option, unable to import data.");
+        }
     }
 
 }

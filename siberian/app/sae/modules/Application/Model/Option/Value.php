@@ -602,13 +602,13 @@ class Application_Model_Option_Value extends Application_Model_Option {
      * @param $path
      * @throws Exception
      */
-    public function readOption($path) {
-        $content = file_get_contents($path);
+    public function readOption($pathOrRawData) {
+        $content = file_get_contents($pathOrRawData);
 
         try {
             $dataset = Siberian_Yaml::decode($content);
         } catch(Exception $e) {
-            throw new Exception("#043-01: An error occured while importing YAML dataset '$path'.");
+            throw new Exception("#043-01: An error occured while importing YAML dataset '$pathOrRawData'.");
         }
 
         if(isset($dataset["option"])) {
