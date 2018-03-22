@@ -1,34 +1,53 @@
 <?php
 
-class Event_Model_Event extends Core_Model_Default {
-
+/**
+ * Class Event_Model_Event
+ *
+ * @method Event_Model_Event[] findAll($values = null, $order = null, $limit = null)
+ */
+class Event_Model_Event extends Core_Model_Default
+{
+    /**
+     *
+     */
     const DISPLAYED_PER_PAGE = 10;
 
-    protected $_list = array();
-    protected $_tmp_list = array();
+    /**
+     * @var array
+     */
+    protected $_list = [];
 
-    public function __construct($params = array()) {
+    /**
+     * @var array
+     */
+    protected $_tmp_list = [];
+
+    /**
+     * Event_Model_Event constructor.
+     * @param array $params
+     */
+    public function __construct($params = []) {
         parent::__construct($params);
         $this->_db_table = 'Event_Model_Db_Table_Event';
         return $this;
     }
 
     /**
+     * @param integer $valueId
      * @return array
      */
-    public function getInappStates($value_id) {
+    public function getInappStates($valueId) {
+        $inAppStates = [
+            [
+                'state' => 'event-list',
+                'offline' => false,
+                'params' => [
+                    'value_id' => $valueId,
+                ],
+            ],
+        ];
 
-        $in_app_states = array(
-            array(
-                "state" => "event-list",
-                "offline" => false,
-                "params" => array(
-                    "value_id" => $value_id,
-                ),
-            ),
-        );
-
-        return $in_app_states;
+        return $inAppStates;
     }
 
     /**
@@ -39,7 +58,7 @@ class Event_Model_Event extends Core_Model_Default {
      */
     public function getFeaturePaths($option_value) {
         if(!$this->isCacheable()) {
-            return array();
+            return [];
         }
 
         $value_id = $option_value->getId();
@@ -48,7 +67,7 @@ class Event_Model_Event extends Core_Model_Default {
 
             $action_view = $this->getActionView();
 
-            $paths = array();
+            $paths = [];
 
             $params = array(
                 'value_id' => $option_value->getId(),
@@ -369,6 +388,149 @@ class Event_Model_Event extends Core_Model_Default {
                     ;
                 }
             }
+        }
+    }
+
+    /**
+     * @param Application_Model_Option_Value $option
+     * @param null $exportType
+     * @param null $request
+     * @return string
+     * @throws Exception
+     */
+    public function exportAction(Application_Model_Option_Value $option, $exportType = null, $request = null)
+    {
+        if ($option && $option->getId()) {
+            $currentOption = $option;
+            $valueId = $currentOption->getId();
+
+            // Events!
+            $events = (new Event_Model_Event())
+                ->findAll(
+                    [
+                        'value_id' => $valueId
+                    ]
+                );
+
+            $dataEvents = [];
+            foreach ($events as $event) {
+                $data = $event->getData();
+
+                if ($data['event_type'] === 'cstm') {
+                    $eventCustoms = (new Event_Model_Event_Custom())
+                        ->findAll(
+                            [
+                                'agenda_id' => $data['event_id'] // agenda_id is the event.event_id!
+                            ]
+                        );
+
+                    $dataEventCustoms = [];
+                    foreach ($eventCustoms as $eventCustom) {
+                        $eventData = $eventCustom->getData();
+
+                        $eventData['picture'] = (new Application_Model_Option_Value())
+                            ->__getBase64Image($eventData['picture']);
+
+                        $dataEventCustoms[] = $eventData;
+                    }
+                    $data['event_customs'] = $dataEventCustoms;
+                }
+
+                $dataEvents[] = $data;
+            }
+
+            $dataset = [
+                'option' => $currentOption->forYaml(),
+                'events' => $dataEvents,
+            ];
+
+            try {
+                $result = Siberian_Yaml::encode($dataset);
+            } catch(Exception $e) {
+                throw new Exception("#EVENT-00: An error occured while exporting dataset to YAML.");
+            }
+
+            return $result;
+
+        } else {
+            throw new Exception("#EVENT-02: Unable to export the feature, non-existing id.");
+        }
+    }
+
+    /**
+     * @param string $pathOrRawData
+     * @throws Exception
+     */
+    public function importAction($pathOrRawData)
+    {
+        if (is_file($pathOrRawData)) {
+            $content = file_get_contents($pathOrRawData);
+        } else {
+            $content = $pathOrRawData;
+        }
+
+        try {
+            $dataset = Siberian_Yaml::decode($content);
+        } catch(Exception $e) {
+            throw new Exception("#EVENT-03: An error occured while importing YAML dataset '$pathOrRawData'.");
+        }
+
+        $application = $this->getApplication();
+        $applicationOption = new Application_Model_Option_Value();
+
+        if (isset($dataset['option'])) {
+            $option = $dataset['option'];
+            $newApplicationOption = $applicationOption
+                ->setData($option)
+                ->unsData('value_id')
+                ->unsData('id')
+                ->setData('app_id', $application-> getId())
+                ->save();
+
+            $newApplicationOption
+                ->_setBackgroundImage($option['background_image'], $newApplicationOption)
+                ->_setBackgroundLandscapeImage($option['background_landscape_image'], $newApplicationOption)
+                ->save();
+
+            $newValueId = $newApplicationOption->getId();
+
+            // Create categories!
+            $oldCategoryIdIndex = [];
+            if (isset($dataset['events']) && $newValueId) {
+                foreach ($dataset['events'] as $event) {
+
+                    $newEvent = new Event_Model_Event();
+                    $newEvent
+                        ->setData($event)
+                        ->unsData('event_id')
+                        ->unsData('id')
+                        ->setData('value_id', $newValueId)
+                        ->save();
+
+                    // Insert sub-events in case of custom
+                    if (($event['event_type'] === 'cstm') && isset($event['event_customs'])) {
+                        foreach ($event['event_customs'] as $eventCustom) {
+                            $newEventCustom = new Event_Model_Event_Custom();
+                            $newEventCustom
+                                ->setData($eventCustom)
+                                ->unsData('event_id')
+                                ->unsData('id')
+                                ->setData('agenda_id', $newEvent->getId())
+                                ->save();
+
+                            $path = (new Application_Model_Option_Value())
+                                ->__setImageFromBase64($eventCustom['picture'], $newApplicationOption);
+
+                            $newEventCustom
+                                ->setData('picture', $path)
+                                ->save();
+                        }
+                    }
+                }
+            }
+
+        } else {
+            throw new Exception("#EVENT-04: Missing option, unable to import data.");
         }
     }
 }

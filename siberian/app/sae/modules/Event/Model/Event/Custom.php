@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * Class Event_Model_Event_Custom
+ *
+ * @method self[] findAll($values = null, $order = null, $limit = null)
+ */
 class Event_Model_Event_Custom extends Core_Model_Default {
 
     protected $_agenda;

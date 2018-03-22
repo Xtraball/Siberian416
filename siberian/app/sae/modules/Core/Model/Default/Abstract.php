@@ -499,7 +499,7 @@ abstract class Core_Model_Default_Abstract {
      * @param array $values
      * @param null $order
      * @param array $params
-     * @return []
+     * @return self[]
      */
     public function findAll($values = [], $order = null, $params = []) {
         return $this->getTable()->findAll($values, $order, $params);
