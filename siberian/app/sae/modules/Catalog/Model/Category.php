@@ -14,6 +14,7 @@
  * @method $this setParentId(integer $parentId)
  * @method $this setIsActive(boolean $isActive)
  * @method $this setIsDeleted(boolean $isDeleted)
+ * @method Catalog_Model_Category[] findAll($values = null, $order = null, $limit = null);
  */
 class Catalog_Model_Category extends Core_Model_Default
 {
@@ -26,7 +27,11 @@ class Catalog_Model_Category extends Core_Model_Default
     protected $_children;
     protected $_active_children;
 
-    public function __construct($datas = array()) {
+    /**
+     * Catalog_Model_Category constructor.
+     * @param array $datas
+     */
+    public function __construct($datas = []) {
         parent::__construct($datas);
         $this->_db_table = 'Catalog_Model_Db_Table_Category';
     }
@@ -431,6 +436,198 @@ class Catalog_Model_Category extends Core_Model_Default
 
             }
 
+        }
+    }
+
+
+
+    /**
+     * @param Application_Model_Option_Value $option
+     * @param null $exportType
+     * @param null $request
+     * @return string
+     * @throws Exception
+     */
+    public function exportAction(Application_Model_Option_Value $option, $exportType = null, $request = null)
+    {
+        if ($option && $option->getId()) {
+            $currentOption = $option;
+            $valueId = $currentOption->getId();
+
+            // Categories!
+            $categories = (new Catalog_Model_Category())
+                ->findAll(
+                    [
+                        'value_id' => $valueId
+                    ]
+                );
+
+            $dataCategories = [];
+            foreach ($categories as $category) {
+                $dataCategories[] = $category->getData();
+            }
+
+            // Products!
+            $products = (new Catalog_Model_Product())
+                ->findAll(
+                    [
+                        'value_id' => $valueId
+                    ]
+                );
+
+            $dataProducts = [];
+            foreach ($products as $product) {
+                $data = $product->getData();
+
+                if ($data['type'] === 'format') {
+                    $formats = (new Catalog_Model_Product_Format_Option())
+                        ->findAll(
+                            [
+                                'product_id' => $data['product_id']
+                            ]
+                        );
+                    $data['formats'] = [];
+                    foreach ($formats as $format) {
+                        $data['formats'][] = $format->getData();
+                    }
+                }
+
+                if (!empty($data['picture'])) {
+                    $data['picture'] = (new Application_Model_Option_Value())
+                        ->__getBase64Image($data['picture']);
+                }
+
+                $dataProducts[] = $data;
+            }
+
+            $dataset = [
+                'option' => $currentOption->forYaml(),
+                'categories' => $dataCategories,
+                'products' => $dataProducts,
+            ];
+
+            try {
+                $result = Siberian_Yaml::encode($dataset);
+            } catch(Exception $e) {
+                throw new Exception("#CATALOG-00: An error occured while exporting dataset to YAML.");
+            }
+
+            return $result;
+
+        } else {
+            throw new Exception("#CATALOG-02: Unable to export the feature, non-existing id.");
+        }
+    }
+
+    /**
+     * @param string $pathOrRawData
+     * @throws Exception
+     */
+    public function importAction($pathOrRawData)
+    {
+        if (is_file($pathOrRawData)) {
+            $content = file_get_contents($pathOrRawData);
+        } else {
+            $content = $pathOrRawData;
+        }
+
+        try {
+            $dataset = Siberian_Yaml::decode($content);
+        } catch(Exception $e) {
+            throw new Exception("#CATALOG-03: An error occured while importing YAML dataset '$pathOrRawData'.");
+        }
+
+        $application = $this->getApplication();
+        $applicationOption = new Application_Model_Option_Value();
+
+        if (isset($dataset['option'])) {
+            $option = $dataset['option'];
+            $newApplicationOption = $applicationOption
+                ->setData($option)
+                ->unsData('value_id')
+                ->unsData('id')
+                ->setData('app_id', $application-> getId())
+                ->save();
+
+            $newApplicationOption
+                ->_setBackgroundImage($option['background_image'], $newApplicationOption)
+                ->_setBackgroundLandscapeImage($option['background_landscape_image'], $newApplicationOption)
+                ->save();
+
+            $newValueId = $newApplicationOption->getId();
+
+            // Create categories!
+            $oldCategoryIdIndex = [];
+            if (isset($dataset['categories']) && $newValueId) {
+
+                $newCategories = [];
+                foreach($dataset['categories'] as $category) {
+                    $oldCategoryId = $category['category_id'];
+
+                    $newCategory = new Catalog_Model_Category();
+                    $newCategory
+                        ->setData($category)
+                        ->unsData('category_id')
+                        ->unsData('id')
+                        ->setData('value_id', $newValueId)
+                        ->save();
+
+                    $oldCategoryIdIndex[$oldCategoryId] = $newCategory->getId();
+                    $newCategories[] = $newCategory;
+                }
+
+                // Second round for categories to update their parents!
+                foreach ($newCategories as $newCategory) {
+                    $oldParentId = $newCategory->getParentId();
+                    if ($oldParentId) {
+                        $newParentId = $oldCategoryIdIndex[$oldParentId];
+                        $newCategory
+                            ->setParentId($newParentId)
+                            ->save();
+                    }
+                }
+
+                if (isset($dataset['products'])) {
+                    $products = $dataset['products'];
+                    foreach ($products as $product) {
+                        $oldProductCategoryId = $product['category_id'];
+                        $newCategoryId = $oldCategoryIdIndex[$oldProductCategoryId];
+
+                        $newProduct = new Catalog_Model_Product();
+                        $newProduct
+                            ->setData($product)
+                            ->unsData('product_id')
+                            ->unsData('id')
+                            ->setData('value_id', $newValueId)
+                            ->setData('category_id', $newCategoryId)
+                            ->save();
+
+
+                        $picturePath = (new Application_Model_Option_Value())
+                            ->__setImageFromBase64($product['picture'], $newApplicationOption);
+
+                        $newProduct
+                            ->setData('picture', $picturePath)
+                            ->save();
+
+                        if (isset($product['formats'])) {
+                            $formats = $product['formats'];
+                            foreach ($formats as $format) {
+                                $newFormat = new Catalog_Model_Product_Format_Option();
+                                $newFormat
+                                    ->setData($format)
+                                    ->unsData('option_id')
+                                    ->unsData('id')
+                                    ->setData('product_id', $newProduct->getId())
+                                    ->save();
+                            }
+                        }
+                    }
+                }
+            }
+
+        } else {
+            throw new Exception("#CATALOG-04: Missing option, unable to import data.");
         }
     }
 }

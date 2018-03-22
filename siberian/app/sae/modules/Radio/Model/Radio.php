@@ -110,7 +110,7 @@ class Radio_Model_Radio extends Core_Model_Default {
 
             try {
                 $result = Siberian_Yaml::encode($dataset);
-            } catch(Exception $e) {
+            } catch (Exception $e) {
                 throw new Exception("#088-03: An error occured while exporting dataset to YAML.");
             }
 
@@ -144,7 +144,7 @@ class Radio_Model_Radio extends Core_Model_Default {
         $application_option = new Application_Model_Option_Value();
         $radio_model = new Radio_Model_Radio();
 
-        if(isset($dataset["option"]) && isset($dataset["radio"])) {
+        if (isset($dataset["option"]) && isset($dataset["radio"])) {
             $new_application_option = $application_option
                 ->setData($dataset["option"])
                 ->unsData("value_id")
@@ -156,7 +156,7 @@ class Radio_Model_Radio extends Core_Model_Default {
             $new_value_id = $new_application_option->getId();
 
             /** Create Job/Options */
-            if($new_value_id) {
+            if ($new_value_id) {
                 $new_radio = $radio_model
                     ->setData($dataset["radio"])
                     ->unsData("radio_id")
@@ -164,11 +164,10 @@ class Radio_Model_Radio extends Core_Model_Default {
                     ->unsData("created_at")
                     ->unsData("updated_at")
                     ->setData("value_id", $new_value_id)
-                    ->_setBackground($dataset["radio"]["background"], $new_application_option)
+                    ->_setBackgroundImage($dataset["radio"]["background_image"], $newApplicationOption)
+                    ->_setBackgroundLandscapeImage($dataset["radio"]["background_landscape_image"], $newApplicationOption)
                     ->save()
                 ;
-            } else {
-                /** Log, empty feature/default */
             }
 
         } else {

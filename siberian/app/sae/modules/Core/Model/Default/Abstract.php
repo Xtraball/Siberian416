@@ -152,8 +152,8 @@ abstract class Core_Model_Default_Abstract {
     }
 
     /**
-     * @param $id
-     * @param null $field
+     * @param mixed $id the primary key id or any other value associated with $field
+     * @param string $field the search will be established on this column if specified
      * @return $this|null
      */
     public function find($id, $field = null) {
@@ -314,22 +314,24 @@ abstract class Core_Model_Default_Abstract {
     public function unsData($key = null)
     {
         if (is_null($key)) {
-            $this->_data = array();
+            $this->_data = [];
         } else {
             unset($this->_data[$key]);
         }
         return $this;
     }
 
+    /**
+     * @param string $key
+     * @return mixed
+     */
     public function getData($key = '')
     {
         if ($key==='') {
             return $this->_data;
-        }
-        elseif(isset($this->_data[$key]) AND !is_null($this->_data[$key])) {
+        } else if(isset($this->_data[$key]) AND !is_null($this->_data[$key])) {
             return is_string($this->_data[$key]) ? stripslashes($this->_data[$key]) : $this->_data[$key];
-        }
-        else {
+        } else {
             return null;
         }
     }
@@ -702,7 +704,7 @@ abstract class Core_Model_Default_Abstract {
      * @return string
      */
     public function __getBase64Image($path) {
-        $path = $this->_default_application_image_path.$path;
+        $path = $this->_default_application_image_path . $path;
 
         return img_to_base64(Core_Model_Directory::getBasePathTo($path));
     }

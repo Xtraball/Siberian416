@@ -553,13 +553,53 @@ class Application_Model_Option_Value extends Application_Model_Option {
     }
 
     /**
-     * @param $base64
-     * @param $option
+     * @param bool $base64
+     * @return string
+     */
+    public function _getBackgroundImage() {
+        return $this->__getBase64Image($this->getBackgroundImage());
+    }
+
+    /**
+     * @param bool $base64
+     * @return string
+     */
+    public function _getBackgroundLandscapeImage() {
+        return $this->__getBase64Image($this->getBackgroundLandscapeImage());
+    }
+
+    /**
+     * @param string $base64
+     * @param Application_Model_Option_Value $option
      * @return $this
      */
     public function _setBackground($base64, $option) {
-        $background_path = $this->__setImageFromBase64($base64, $option, 1080, 1920);
-        $this->setBackground($background_path);
+        $backgroundPath = $this->__setImageFromBase64($base64, $option, 1080, 1920);
+        $this->setBackground($backgroundPath);
+
+        return $this;
+    }
+
+    /**
+     * @param string $base64
+     * @param Application_Model_Option_Value $option
+     * @return $this
+     */
+    public function _setBackgroundImage($base64, $option) {
+        $backgroundPath = $this->__setImageFromBase64($base64, $option, 1080, 1920);
+        $this->setBackgroundImage($backgroundPath);
+
+        return $this;
+    }
+
+    /**
+     * @param string $base64
+     * @param Application_Model_Option_Value $option
+     * @return $this
+     */
+    public function _setBackgroundLandscapeImage($base64, $option) {
+        $backgroundPath = $this->__setImageFromBase64($base64, $option, 1920, 1080);
+        $this->setBackgroundLandscapeImage($backgroundPath);
 
         return $this;
     }
@@ -621,13 +661,21 @@ class Application_Model_Option_Value extends Application_Model_Option {
     /**
      * Prepare the export for YAML (with base64 background)
      *
-     * @return array|mixed|null|string
+     * @return array
      */
     public function forYaml() {
         $data = $this->getData();
 
         if ($this->getBackground()) {
             $data["background"] = $this->_getBackground();
+        }
+
+        if ($this->getBackgroundImage()) {
+            $data['background_image'] = $this->_getBackgroundImage();
+        }
+
+        if ($this->getBackgroundLandscapeImage()) {
+            $data['background_landscape_image'] = $this->_getBackgroundLandscapeImage();
         }
 
         return $data;

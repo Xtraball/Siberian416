@@ -173,8 +173,7 @@ class Booking_Model_Booking extends Core_Model_Default {
                 ->unsData("value_id")
                 ->unsData("id")
                 ->setData('app_id', $application->getId())
-                ->save()
-            ;
+                ->save();
 
             $new_value_id = $new_application_option->getId();
 
@@ -183,8 +182,7 @@ class Booking_Model_Booking extends Core_Model_Default {
                 ->setData($dataset["booking"])
                 ->unsData("booking_id")
                 ->unsData("id")
-                ->save()
-            ;
+                ->save();
 
             /** Create Stores */
             if(isset($dataset["stores"]) && $new_value_id && $new_booking->getId()) {

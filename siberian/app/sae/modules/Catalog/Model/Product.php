@@ -19,18 +19,22 @@ class Catalog_Model_Product extends Core_Model_Default {
     protected $_category;
     protected $_category_ids;
     protected $_groups;
-    protected $_specific_import_data = array(
-        "mcommerce_id"
-    );
+    protected $_specific_import_data = [
+        'mcommerce_id'
+    ];
 
-    protected $_mandatory_columns = array(
-        "tax_id",
-        "name",
-        "description",
-        "price"
-    );
+    protected $_mandatory_columns = [
+        'tax_id',
+        'name',
+        'description',
+        'price'
+    ];
 
-    public function __construct($datas = array()) {
+    /**
+     * Catalog_Model_Product constructor.
+     * @param array $datas
+     */
+    public function __construct($datas = []) {
         parent::__construct($datas);
         $this->_db_table = 'Catalog_Model_Db_Table_Product';
     }
@@ -41,7 +45,7 @@ class Catalog_Model_Product extends Core_Model_Default {
     public function getInappStates($value_id) {
         $products = $this->findByValueId($value_id);
 
-        $state_products = array();
+        $state_products = [];
         foreach($products as $product) {
             $state_products[] = array(
                 "label" => $product->getName(),
