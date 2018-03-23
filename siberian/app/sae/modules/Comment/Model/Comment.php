@@ -1,14 +1,41 @@
 <?php
-class Comment_Model_Comment extends Core_Model_Default {
 
+/**
+ * Class Comment_Model_Comment
+ */
+class Comment_Model_Comment extends Core_Model_Default
+{
+    /**
+     * @var bool
+     */
     protected $_is_cacheable = true;
+
+    /**
+     *
+     */
     const DISPLAYED_PER_PAGE = 10;
 
+    /**
+     * @var
+     */
     protected $_answers;
+
+    /**
+     * @var
+     */
     protected $_likes;
+
+    /**
+     * @var
+     */
     protected $_customer;
 
-    public function __construct($params = array()) {
+    /**
+     * Comment_Model_Comment constructor.
+     * @param array $params
+     */
+    public function __construct($params = [])
+    {
         parent::__construct($params);
         $this->_db_table = 'Comment_Model_Db_Table_Comment';
         return $this;
@@ -17,27 +44,32 @@ class Comment_Model_Comment extends Core_Model_Default {
     /**
      * @return array
      */
-    public function getInappStates($value_id) {
-
-        $in_app_states = array(
-            array(
+    public function getInappStates($valueId)
+    {
+        $inAppStates = [
+            [
                 "state" => "newswall-list",
                 "offline" => true,
-                "params" => array(
-                    "value_id" => $value_id,
-                ),
-            ),
-        );
+                "params" => [
+                    "value_id" => $valueId,
+                ],
+            ],
+        ];
 
-        return $in_app_states;
+        return $inAppStates;
     }
 
-    public function getFeaturePaths($option_value) {
+    /**
+     * @param $option_value
+     * @return array|string[]
+     */
+    public function getFeaturePaths($option_value)
+    {
         if(!$this->isCacheable()) {
-            return array();
+            return [];
         }
 
-        $paths = array();
+        $paths = [];
 
         $value_id = $option_value->getId();
         $cache_id = "feature_paths_valueid_{$value_id}";
@@ -81,7 +113,12 @@ class Comment_Model_Comment extends Core_Model_Default {
         return $paths;
     }
 
-    public function getAssetsPaths($option_value) {
+    /**
+     * @param $option_value
+     * @return array|string[]
+     */
+    public function getAssetsPaths($option_value)
+    {
         if(!$this->isCacheable()) {
             return array();
         }
@@ -257,6 +294,122 @@ class Comment_Model_Comment extends Core_Model_Default {
         $this->save();
 
         return $this;
+    }
+
+    /**
+     * @param Application_Model_Option_Value $option
+     * @param null $exportType
+     * @param null $request
+     * @return string
+     * @throws Exception
+     */
+    public function exportAction(Application_Model_Option_Value $option, $exportType = null, $request = null)
+    {
+        if ($option && $option->getId()) {
+            $currentOption = $option;
+            $valueId = $currentOption->getId();
+            $code = $currentOption->getCode();
+
+            // Events!
+            $comments = (new Comment_Model_Comment())
+                ->findAll(
+                    [
+                        'value_id' => $valueId
+                    ]
+                );
+
+            $dataComments = [];
+            foreach ($comments as $comment) {
+                $data = $comment->getData();
+
+                $data['image'] = (new Application_Model_Option_Value())
+                    ->__getBase64Image($data['image']);
+
+                // We remove the customer id, we can't export it!
+                $data['customer_id'] = null;
+
+                $dataComments[] = $data;
+            }
+
+            $dataset = [
+                'option' => $currentOption->forYaml(),
+                'comments' => $dataComments,
+            ];
+
+            try {
+                $result = Siberian_Yaml::encode($dataset);
+            } catch(Exception $e) {
+                throw new Exception("#NEWSWALL_FANWALL-00: An error occured while exporting dataset to YAML.");
+            }
+
+            return $result;
+
+        } else {
+            throw new Exception("#NEWSWALL_FANWALL-02: Unable to export the feature, non-existing id.");
+        }
+    }
+
+    /**
+     * @param string $pathOrRawData
+     * @throws Exception
+     */
+    public function importAction($pathOrRawData)
+    {
+        if (is_file($pathOrRawData)) {
+            $content = file_get_contents($pathOrRawData);
+        } else {
+            $content = $pathOrRawData;
+        }
+
+        try {
+            $dataset = Siberian_Yaml::decode($content);
+        } catch(Exception $e) {
+            throw new Exception("#NEWSWALL_FANWALL-03: An error occured while importing YAML dataset '$pathOrRawData'.");
+        }
+
+        $application = $this->getApplication();
+        $applicationOption = new Application_Model_Option_Value();
+
+        if (isset($dataset['option'])) {
+            $option = $dataset['option'];
+            $newApplicationOption = $applicationOption
+                ->setData($option)
+                ->unsData('value_id')
+                ->unsData('id')
+                ->setData('app_id', $application-> getId())
+                ->save();
+
+            $newApplicationOption
+                ->_setBackgroundImage($option['background_image'], $newApplicationOption)
+                ->_setBackgroundLandscapeImage($option['background_landscape_image'], $newApplicationOption)
+                ->save();
+
+            $newValueId = $newApplicationOption->getId();
+
+            // Create comments!
+            if (isset($dataset['comments']) && $newValueId) {
+                foreach ($dataset['comments'] as $comment) {
+
+                    $newComment = new Comment_Model_Comment();
+                    $newComment
+                        ->setData($comment)
+                        ->unsData('comment_id')
+                        ->unsData('id')
+                        ->setData('value_id', $newValueId)
+                        ->save();
+
+                    $path = (new Application_Model_Option_Value())
+                        ->__setImageFromBase64($comment['image'], $newApplicationOption);
+
+                    $newComment
+                        ->setData('image', $path)
+                        ->save();
+                }
+            }
+
+        } else {
+            throw new Exception("#NEWSWALL_FANWALL-04: Missing option, unable to import data.");
+        }
     }
 
 }

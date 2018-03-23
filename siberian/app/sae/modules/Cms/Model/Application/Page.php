@@ -1,13 +1,36 @@
 <?php
 
+/**
+ * Class Cms_Model_Application_Page
+ */
 class Cms_Model_Application_Page extends Core_Model_Default
 {
+    /**
+     * @var bool
+     */
     protected $_is_cacheable = true;
-    protected $_blocks;
-    protected $_metadata;
-    protected $_action_view = "findall";
 
-    public function __construct($params = array()) {
+    /**
+     * @var
+     */
+    protected $_blocks;
+
+    /**
+     * @var
+     */
+    protected $_metadata;
+
+    /**
+     * @var string
+     */
+    protected $_action_view = 'findall';
+
+    /**
+     * Cms_Model_Application_Page constructor.
+     * @param array $params
+     */
+    public function __construct($params = [])
+    {
         parent::__construct($params);
         $this->_db_table = 'Cms_Model_Db_Table_Application_Page';
         return $this;
@@ -20,7 +43,8 @@ class Cms_Model_Application_Page extends Core_Model_Default
      * @param $params
      * @return collection of pages
      */
-    public static function findAllOrderedByRank($value_id, $params = null) {
+    public static function findAllOrderedByRank($value_id, $params = null)
+    {
         return self::findAllOrderedBy($value_id, 'rank', $params);
     }
 
@@ -31,7 +55,8 @@ class Cms_Model_Application_Page extends Core_Model_Default
      * @param $params
      * @return collection of pages
      */
-    public static function findAllOrderedByLabel($value_id, $params = null) {
+    public static function findAllOrderedByLabel($value_id, $params = null)
+    {
         return self::findAllOrderedBy($value_id, 'label', $params);
     }
 
@@ -39,8 +64,8 @@ class Cms_Model_Application_Page extends Core_Model_Default
      * @param $option_value
      * @return bool
      */
-    public function getEmbedPayload($option_value) {
-
+    public function getEmbedPayload($option_value)
+    {
         switch($option_value->getCode()) {
             case "places":
                     $payload = array(
@@ -81,8 +106,8 @@ class Cms_Model_Application_Page extends Core_Model_Default
      *
      * @return array
      */
-    public function getInappStates($value_id) {
-
+    public function getInappStates($value_id)
+    {
         $option_value_model = new Application_Model_Option_Value();
         $option_value = $option_value_model->find($value_id);
 
@@ -90,7 +115,7 @@ class Cms_Model_Application_Page extends Core_Model_Default
         $option = $option_model->find($option_value->getOptionId());
 
         # Special case 1. for Places
-        if($option->getCode() == "places") {
+        if ($option->getCode() == "places") {
             $place_model = new Places_Model_Place();
             return $place_model->getInappStates($value_id);
         }
@@ -112,17 +137,18 @@ class Cms_Model_Application_Page extends Core_Model_Default
      * @param $option_value
      * @return array
      */
-    public function getFeaturePaths($option_value) {
+    public function getFeaturePaths($option_value)
+    {
         if(!$this->isCacheable()) {
-            return array();
+            return [];
         }
 
         $value_id = $option_value->getId();
         $cache_id = "feature_paths_valueid_{$value_id}";
-        if(!$result = $this->cache->load($cache_id)) {
+        if (!$result = $this->cache->load($cache_id)) {
 
-            if($option_value->getCode() == "custom_page") {
-                $paths = array();
+            if ($option_value->getCode() == "custom_page") {
+                $paths = [];
 
                 $paths[] = $option_value->getPath(
                     "find",
@@ -190,9 +216,10 @@ class Cms_Model_Application_Page extends Core_Model_Default
      * @param $option_value
      * @return array|void
      */
-    public function getAssetsPaths($option_value) {
+    public function getAssetsPaths($option_value)
+    {
         if(!$this->isCacheable()) {
-            return array();
+            return [];
         }
 
         $value_id = $option_value->getId();
@@ -200,7 +227,7 @@ class Cms_Model_Application_Page extends Core_Model_Default
         if(!$result = $this->cache->load($cache_id)) {
 
             if($option_value->getCode() == "custom_page") {
-                $paths = array();
+                $paths = [];
 
                 $val = $this->getPictureUr();
                 if(!empty($val)) {
@@ -268,7 +295,8 @@ class Cms_Model_Application_Page extends Core_Model_Default
      * @param $params
      * @return collection of pages
      */
-    private static function findAllOrderedBy($value_id, $field, $params = null) {
+    private static function findAllOrderedBy($value_id, $field, $params = null)
+    {
         $table = new Cms_Model_Db_Table_Application_Page();
         $select = $table->select(Zend_Db_Table::SELECT_WITH_FROM_PART);
         $select->setIntegrityCheck(false);
@@ -287,7 +315,13 @@ class Cms_Model_Application_Page extends Core_Model_Default
         return $table->fetchAll($select);
     }
 
-    public static function findAllByPageId($value_id, $ids) {
+    /**
+     * @param $value_id
+     * @param $ids
+     * @return Zend_Db_Table_Rowset_Abstract
+     */
+    public static function findAllByPageId($value_id, $ids)
+    {
         $table = new Cms_Model_Db_Table_Application_Page();
         $select = $table->select(Zend_Db_Table::SELECT_WITH_FROM_PART);
         $select->where("cms_application_page.value_id = ?", $value_id)
@@ -300,7 +334,8 @@ class Cms_Model_Application_Page extends Core_Model_Default
      *
      * @param $option_value
      */
-    public function prepareFeature($option_value) {
+    public function prepareFeature($option_value)
+    {
         self::setPlaceOrder($option_value->getValueId(), 'true');
     }
 
@@ -310,7 +345,8 @@ class Cms_Model_Application_Page extends Core_Model_Default
      * @param $value_id
      * @param $order
      */
-    public static function setPlaceOrder($value_id, $order) {
+    public static function setPlaceOrder($value_id, $order)
+    {
         // Delete old metadata value
         Application_Model_Option_Value_Metadata::deleteByCode($value_id, 'places_order');
         // Replace it with the current one
@@ -328,7 +364,8 @@ class Cms_Model_Application_Page extends Core_Model_Default
      * @param $value_id
      * @param $order
      */
-    public static function setPlaceOrderAlpha($value_id, $order) {
+    public static function setPlaceOrderAlpha($value_id, $order)
+    {
         // Delete old metadata value
         Application_Model_Option_Value_Metadata::deleteByCode($value_id, 'places_order_alpha');
         // Replace it with the current one
@@ -340,7 +377,12 @@ class Cms_Model_Application_Page extends Core_Model_Default
         $metadatum->save();
     }
 
-    public function findByUrl($url) {
+    /**
+     * @param $url
+     * @return $this
+     */
+    public function findByUrl($url)
+    {
         $this->find($url, 'url');
         return $this;
     }
@@ -348,7 +390,8 @@ class Cms_Model_Application_Page extends Core_Model_Default
     /**
      * @return Cms_Model_Application_Block[]
      */
-    public function getBlocks() {
+    public function getBlocks()
+    {
         if(is_null($this->_blocks) AND $this->getId()) {
             $block = new Cms_Model_Application_Block();
             $this->_blocks = $block->findByPage($this->getId());
@@ -357,28 +400,41 @@ class Cms_Model_Application_Page extends Core_Model_Default
         return $this->_blocks;
     }
 
-    public function getPictureUrl() {
+    /**
+     * @return null|string
+     */
+    public function getPictureUrl()
+    {
         $path = Application_Model_Application::getImagePath().$this->getPicture();
         $base_path = Application_Model_Application::getBaseImagePath().$this->getPicture();
         return is_file($base_path) ? $path : null;
     }
 
-    public function getThumbnailUrl() {
+    /**
+     * @return null|string
+     */
+    public function getThumbnailUrl()
+    {
         $path = Application_Model_Application::getImagePath().$this->getThumbnail();
         $base_path = Application_Model_Application::getBaseImagePath().$this->getThumbnail();
         return is_file($base_path) ? $path : null;
     }
 
-    public function save() {
+    /**
+     * @return $this|void
+     */
+    public function save()
+    {
         parent::save();
-        $blocks = $this->getData('block') ? $this->getData('block') : array();
+        $blocks = $this->getData('block') ? $this->getData('block') : [];
         $this->getTable()->saveBlock($this->getId(), $blocks);
     }
 
     /**
      * No needs for saveBlocks anymore
      */
-    public function save_v2() {
+    public function save_v2()
+    {
         parent::save();
     }
 
@@ -389,8 +445,8 @@ class Cms_Model_Application_Page extends Core_Model_Default
      * @param $option_value
      * @param $datas
      */
-    public function edit_v2($option_value, $datas) {
-
+    public function edit_v2($option_value, $datas)
+    {
         if (empty($datas['orderUniqid'])) {
             throw new Siberian_Exception('#578-21' . __('At least one section is required to save.'));
         }
@@ -494,12 +550,12 @@ class Cms_Model_Application_Page extends Core_Model_Default
                     ->setOptionValue($option_value)
                     ->populate($values)
                     ->createBlock($block_type, $page, $block_position)
-                    ->save_v2()
-                ;
+                    ->save_v2();
 
                 if ($result === false) {
                     $messagePartialError[] =
-                        __('The block N°%s, %s was not saved, the block was either empty or invalid.', $block_position + 1, __(ucfirst($block_type)));
+                        __('The block N°%s, %s was not saved, the block was either empty or invalid.',
+                            $block_position + 1, __(ucfirst($block_type)));
                 }
 
                 $block_position++;
@@ -533,14 +589,14 @@ class Cms_Model_Application_Page extends Core_Model_Default
      * @param $design
      * @param $category
      */
-    public function createDummyContents($option_value, $design, $category) {
-
+    public function createDummyContents($option_value, $design, $category)
+    {
         $option = new Application_Model_Option();
         $option->find($option_value->getOptionId());
 
         $dummy_content_xml = $this->_getDummyXml($design, $category);
 
-        if($option->getCode() == 'places' && $dummy_content_xml->places) {
+        if ($option->getCode() == 'places' && $dummy_content_xml->places) {
 
             foreach ($dummy_content_xml->places->children() as $content) {
 
@@ -572,7 +628,7 @@ class Cms_Model_Application_Page extends Core_Model_Default
 
         } else {
 
-            $blocks = array();
+            $blocks = [];
             $i = 1;
             foreach ($dummy_content_xml->blocks->children() as $content) {
 
@@ -599,8 +655,9 @@ class Cms_Model_Application_Page extends Core_Model_Default
     /**
      * @param $option
      */
-    public function copyTo($option) {
-        $blocks = array();
+    public function copyTo($option)
+    {
+        $blocks = [];
 
         foreach($this->getBlocks() as $block) {
             switch($block->getType()) {
@@ -615,8 +672,8 @@ class Cms_Model_Application_Page extends Core_Model_Default
                         ->unsCoverId()
                         ->unsSliderId();
                     $new_block = $block->getData();
-                    $new_block['image_url'] = array();
-                    $new_block['image_fullsize_url'] = array();
+                    $new_block['image_url'] = [];
+                    $new_block['image_fullsize_url'] = [];
                     $new_block['library_id'] = null;
                     $new_block['type'] = $block->getType();
 
@@ -743,7 +800,8 @@ class Cms_Model_Application_Page extends Core_Model_Default
      *
      * @return $this
      */
-    public function saveMetadata(){
+    public function saveMetadata()
+    {
         foreach ($this->_metadata as $metadatum) {
             $metadatum->save();
         }
@@ -769,7 +827,8 @@ class Cms_Model_Application_Page extends Core_Model_Default
      * @param $datas
      * @return $this
      */
-    public function savePlace($option_value, $datas) {
+    public function savePlace($option_value, $datas)
+    {
         $picture = Siberian_Feature::saveImageForOptionDelete($option_value, $datas["places_file"]);
         $thumbnail = Siberian_Feature::saveImageForOptionDelete($option_value, $datas["places_thumbnail"]);
 
@@ -781,5 +840,196 @@ class Cms_Model_Application_Page extends Core_Model_Default
             ->save();
 
         return $this;
+    }
+
+    /**
+     * @param Application_Model_Option_Value $option
+     * @param null $exportType
+     * @param null $request
+     * @return string
+     * @throws Exception
+     */
+    public function exportAction(Application_Model_Option_Value $option, $exportType = null, $request = null)
+    {
+        if ($option && $option->getId()) {
+            $currentOption = $option;
+            $valueId = $currentOption->getId();
+
+            // Events!
+            $page = (new Cms_Model_Application_Page())
+                ->find(
+                    [
+                        'value_id' => $valueId
+                    ]
+                );
+
+            $data = $page->getData();
+
+            if (isset($data['picture'])) {
+                $data['picture'] = (new Application_Model_Option_Value())
+                    ->__getBase64Image($data['picture']);
+            }
+
+            if (isset($data['thumbnail'])) {
+                $data['thumbnail'] = (new Application_Model_Option_Value())
+                    ->__getBase64Image($data['thumbnail']);
+            }
+
+            $dataPage = $data;
+
+            // Find blocks!
+            $blocks = (new Cms_Model_Application_Block())
+                ->findAll();
+
+            $blockTypes = [];
+            foreach ($blocks as $block) {
+                $blockTypes[$block->getBlockId()] = $block->getType();
+            }
+
+            $pageBlocks = (new Cms_Model_Application_Page_Block())
+                ->findAll(
+                    [
+                        'page_id' => $page->getPageId()
+                    ],
+                    'position ASC'
+                );
+
+            $dataPage['blocks'] = [];
+            foreach ($pageBlocks as $pageBlock) {
+                $currentBlockType = $blockTypes[$pageBlock->getBlockId()];
+                $currentBlockId = $pageBlock->getValueId(); // Yet it's really annoying, it's not a value_id at all ...
+
+                $block = null;
+                switch ($currentBlockType) {
+                    case 'text':
+                        $block = new Cms_Model_Application_Page_Block_Text();
+                        break;
+                    case 'image':
+                        $block = new Cms_Model_Application_Page_Block_Image();
+                        break;
+                    case 'video':
+                        $block = new Cms_Model_Application_Page_Block_Video();
+                        break;
+                    case 'address':
+                        $block = new Cms_Model_Application_Page_Block_Address();
+                        break;
+                    case 'button':
+                        $block = new Cms_Model_Application_Page_Block_Button();
+                        break;
+                    case 'file':
+                        $block = new Cms_Model_Application_Page_Block_File();
+                        break;
+                    case 'slider':
+                        $block = new Cms_Model_Application_Page_Block_Slider();
+                        break;
+                    case 'cover':
+                        $block = new Cms_Model_Application_Page_Block_Cover();
+                        break;
+                    default:
+                        throw new Siberian_Exception(__("This block type doesn't exists."));
+                }
+
+                if ($block !== null) {
+                    $blockData = $block
+                        ->find($currentBlockId, 'value_id')
+                        ->forYaml();
+
+                    $dataPage['blocks'][] = $blockData;
+                }
+            }
+
+            $dataset = [
+                'option' => $currentOption->forYaml(),
+                'page' => $dataPage,
+            ];
+
+            try {
+                $result = Siberian_Yaml::encode($dataset);
+            } catch(Exception $e) {
+                throw new Exception("#CUSTOM_PAGE-01: An error occured while exporting dataset to YAML.");
+            }
+
+            return $result;
+
+        } else {
+            throw new Exception("#CUSTOM_PAGE-02: Unable to export the feature, non-existing id.");
+        }
+    }
+
+    /**
+     * @param string $pathOrRawData
+     * @throws Exception
+     */
+    public function importAction($pathOrRawData)
+    {
+        if (is_file($pathOrRawData)) {
+            $content = file_get_contents($pathOrRawData);
+        } else {
+            $content = $pathOrRawData;
+        }
+
+        try {
+            $dataset = Siberian_Yaml::decode($content);
+        } catch(Exception $e) {
+            throw new Exception("#CUSTOM_PAGE-03: An error occured while importing YAML dataset '$pathOrRawData'.");
+        }
+
+        $application = $this->getApplication();
+        $applicationOption = new Application_Model_Option_Value();
+
+        if (isset($dataset['option'])) {
+            $option = $dataset['option'];
+            $newApplicationOption = $applicationOption
+                ->setData($option)
+                ->unsData('value_id')
+                ->unsData('id')
+                ->setData('app_id', $application-> getId())
+                ->save();
+
+            $newApplicationOption
+                ->_setBackgroundImage($option['background_image'], $newApplicationOption)
+                ->_setBackgroundLandscapeImage($option['background_landscape_image'], $newApplicationOption)
+                ->save();
+
+            $newValueId = $newApplicationOption->getId();
+
+            // Create categories!
+            $oldCategoryIdIndex = [];
+            if (isset($dataset['events']) && $newValueId) {
+                foreach ($dataset['events'] as $event) {
+
+                    $newEvent = new Event_Model_Event();
+                    $newEvent
+                        ->setData($event)
+                        ->unsData('event_id')
+                        ->unsData('id')
+                        ->setData('value_id', $newValueId)
+                        ->save();
+
+                    // Insert sub-events in case of custom
+                    if (($event['event_type'] === 'cstm') && isset($event['event_customs'])) {
+                        foreach ($event['event_customs'] as $eventCustom) {
+                            $newEventCustom = new Event_Model_Event_Custom();
+                            $newEventCustom
+                                ->setData($eventCustom)
+                                ->unsData('event_id')
+                                ->unsData('id')
+                                ->setData('agenda_id', $newEvent->getId())
+                                ->save();
+
+                            $path = (new Application_Model_Option_Value())
+                                ->__setImageFromBase64($eventCustom['picture'], $newApplicationOption);
+
+                            $newEventCustom
+                                ->setData('picture', $path)
+                                ->save();
+                        }
+                    }
+                }
+            }
+
+        } else {
+            throw new Exception("#CUSTOM_PAGE-04: Missing option, unable to import data.");
+        }
     }
 }

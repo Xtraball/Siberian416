@@ -25,5 +25,21 @@ class Cms_Model_Application_Page_Block_Slider extends Cms_Model_Application_Page
 
         return false;
     }
+
+    /**
+     * @return array
+     */
+    public function forYaml ()
+    {
+        return $this->getData();
+        $yamlData = $this->getData();
+
+        if (isset($yamlData['name'])) {
+            $path = Core_Model_Directory::getBasePathTo('/images/application' . $yamlData['name']);
+            $yamlData['name'] = fileToBase64($path);
+        }
+
+        return $yamlData;
+    }
     
 }

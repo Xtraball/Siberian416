@@ -1,17 +1,34 @@
 <?php
 
+/**
+ * Class Cms_Model_Application_Page_Block_Address
+ */
 class Cms_Model_Application_Page_Block_Address extends Cms_Model_Application_Page_Block_Abstract
 {
-
-    public function __construct($params = array()) {
+    /**
+     * Cms_Model_Application_Page_Block_Address constructor.
+     * @param array $params
+     */
+    public function __construct($params = [])
+    {
         parent::__construct($params);
         $this->_db_table = 'Cms_Model_Db_Table_Application_Page_Block_Address';
         return $this;
     }
 
+    /**
+     * @return bool|mixed
+     */
     public function isValid() {
         return !is_null($this->getAddress());
-        return false;
+    }
+
+    /**
+     * @return array
+     */
+    public function forYaml ()
+    {
+        return $this->getData();
     }
 
 }

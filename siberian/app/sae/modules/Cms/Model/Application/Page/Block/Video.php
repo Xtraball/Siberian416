@@ -2,17 +2,24 @@
 
 /**
  * Class Cms_Model_Application_Page_Block_Video
+ *
+ * @method string getTypeId()
+ * @method $this setTypeId(string $typeId)
+ * @method string getDescription()
+ * @method $this setDescription(string $description)
+ * @method $this setImage(string $imagePath)
+ * @method integer getVideoId()
  */
 class Cms_Model_Application_Page_Block_Video extends Cms_Model_Application_Page_Block_Abstract {
 
     /**
      * @var array
      */
-    protected $_types = array(
-        1 => "link",
-        2 => "youtube",
-        3 => "podcast",
-    );
+    protected $_types = [
+        1 => 'link',
+        2 => 'youtube',
+        3 => 'podcast',
+    ];
 
     /**
      * @var Cms_Model_Application_Page_Block_Video_*
@@ -23,7 +30,8 @@ class Cms_Model_Application_Page_Block_Video extends Cms_Model_Application_Page_
      * Cms_Model_Application_Page_Block_Video constructor.
      * @param array $params
      */
-    public function __construct($params = array()) {
+    public function __construct($params = [])
+    {
         parent::__construct($params);
         $this->_db_table = "Cms_Model_Db_Table_Application_Page_Block_Video";
         return $this;
@@ -33,26 +41,35 @@ class Cms_Model_Application_Page_Block_Video extends Cms_Model_Application_Page_
      * @param array $data
      * @return mixed
      */
-    public function populate($data = array()) {
-        $this->setTypeId($data["type"]);
+    public function populate($data = [])
+    {
+        $this->setTypeId($data['type']);
 
-        if($this->getTypeInstance()) {
-            if($data["type"] == "link") {
-                $data["image"] = $this->saveImage($data["cover_image"]);
-                $this->setImage($data["image"]);
-                $this->setDescription($data["description"]);
+        if ($this->getTypeInstance()) {
+            if ($data['type'] === 'link') {
+                $data['image'] = $this->saveImage($data['cover_image']);
+                $this->setImage($data['image']);
+                $this->setDescription($data['description']);
             }
-            $this->getTypeInstance()->setOptionValue($this->option_value)->populate($data);
+            $this
+                ->getTypeInstance()
+                ->setOptionValue($this->option_value)
+                ->populate($data);
         }
 
         return $this;
     }
 
-    public function find($id, $field = null) {
+    /**
+     * @param mixed $id
+     * @param null $field
+     * @return $this|null
+     */
+    public function find($id, $field = null)
+    {
         parent::find($id, $field);
-        # should remove _addTypedatas when all cms up-to-date
 
-        return $this;$this->_addTypeDatas();
+        return $this;
     }
 
     /**
@@ -60,43 +77,59 @@ class Cms_Model_Application_Page_Block_Video extends Cms_Model_Application_Page_
      *
      * @return bool
      */
-    public function isValid() {
-        return $this->getTypeInstance() ? $this->getTypeInstance()->isValid() : false;
+    public function isValid()
+    {
+        return $this->getTypeInstance() ?
+            $this->getTypeInstance()->isValid() : false;
     }
 
-    public function getImage() {
-        $local = $this->getData("image");
-        if(empty($local)) {
-            $local = $this->getTypeInstance()->getData("image");
+    /**
+     * @return string
+     */
+    public function getImage()
+    {
+        $local = $this->getData('image');
+        if (empty($local)) {
+            $local = $this
+                ->getTypeInstance()
+                ->getData('image');
         }
 
         return $local;
     }
 
-    public function getImageUrl() {
-        if($this->isValid()) {
-            return $this->getTypeInstance()->getImageUrl();
+    /**
+     * @return string
+     */
+    public function getImageUrl()
+    {
+        if ($this->isValid()) {
+            return $this
+                ->getTypeInstance()
+                ->getImageUrl();
         }
         return '';
     }
 
     /**
-     * @todo ...
      * @return null
      */
-    public function getTypeInstance() {
-        if(!$this->_type_instance) {
+    public function getTypeInstance()
+    {
+        if (!$this->_type_instance) {
             $type = $this->getTypeId();
-            if(in_array($type, $this->_types)) {
+            if (in_array($type, $this->_types)) {
                 $class = 'Cms_Model_Application_Page_Block_Video_'.ucfirst($type);
-                $this->_type_instance = new $class();
-                $this->_type_instance->find($this->getId());
-                $this->_type_instance->addData($this->getData());
+
+                $this->_type_instance = (new $class())
+                    ->find($this->getId());
+                $this->_type_instance
+                    ->addData($this->getData());
             }
         }
 
-        return !empty($this->_type_instance) ? $this->_type_instance : null;
-
+        return !empty($this->_type_instance) ?
+            $this->_type_instance : null;
     }
 
     /**
@@ -106,15 +139,20 @@ class Cms_Model_Application_Page_Block_Video extends Cms_Model_Application_Page_
      * @param null $id
      * @return mixed
      */
-    public function getList($search, $id = null) {
+    public function getList($search, $id = null)
+    {
         return $this->getTypeInstance()->getList($search, $id);
     }
 
-    public function save_v2() {
+    public function save_v2()
+    {
         parent::save();
 
-        if($this->getTypeInstance()) {
-            $this->getTypeInstance()->setVideoId($this->getId())->save();
+        if ($this->getTypeInstance()) {
+            $this
+                ->getTypeInstance()
+                ->setVideoId($this->getId())
+                ->save();
         }
 
         return $this;
@@ -124,11 +162,20 @@ class Cms_Model_Application_Page_Block_Video extends Cms_Model_Application_Page_
      * @deprecated should be replaced with save_v2/renamed
      * @return $this
      */
-    public function save() {
+    public function save()
+    {
         parent::save();
-        if(!$this->getIsDeleted()) {
-            if($this->getTypeInstance()->getId()) $this->getTypeInstance()->delete();
-            $this->getTypeInstance()->setData($this->_getTypeInstanceData())->setVideoId($this->getId())->save();
+        if (!$this->getIsDeleted()) {
+            if ($this->getTypeInstance()->getId()) {
+                $this
+                    ->getTypeInstance()
+                    ->delete();
+            }
+            $this
+                ->getTypeInstance()
+                ->setData($this->_getTypeInstanceData())
+                ->setVideoId($this->getId())
+                ->save();
         }
 
         return $this;
@@ -138,9 +185,11 @@ class Cms_Model_Application_Page_Block_Video extends Cms_Model_Application_Page_
      * @deprecated
      * @return $this
      */
-    protected function _addTypeDatas() {
-        if($this->getTypeInstance() AND $this->getTypeInstance()->getId()) {
-            $this->addData($this->getTypeInstance()->getData());
+    protected function _addTypeDatas()
+    {
+        if ($this->getTypeInstance() AND $this->getTypeInstance()->getId()) {
+            $this
+                ->addData($this->getTypeInstance()->getData());
         }
 
         return $this;
@@ -150,14 +199,61 @@ class Cms_Model_Application_Page_Block_Video extends Cms_Model_Application_Page_
      * @deprecated
      * @return array
      */
-    protected function _getTypeInstanceData() {
+    protected function _getTypeInstanceData()
+    {
         $fields = $this->getTypeInstance()->getFields();
-        $datas = array();
-        foreach($fields as $field) {
+        $datas = [];
+        foreach ($fields as $field) {
             $datas[$field] = $this->getData($field);
         }
 
         return $datas;
+    }
+
+    /**
+     * @return array
+     */
+    public function forYaml ()
+    {
+        $yamlData = $this->getData();
+
+        if (isset($yamlData['image'])) {
+            $yamlData['image'] = (new Application_Model_Option_Value())
+                ->__getBase64Image($yamlData['image']);
+        }
+
+        // Fetch the type!
+        switch ($this->getTypeId()) {
+            case 'link':
+                    $link = (new Cms_Model_Application_Page_Block_Video_Link())
+                        ->find($this->getVideoId(), 'video_id');
+
+                    $data = $link->getData();
+
+                    if (isset($data['image'])) {
+                        $data['image'] = (new Application_Model_Option_Value())
+                            ->__getBase64Image($data['image']);
+                    }
+
+                break;
+            case 'podcast':
+                    $podcast = (new Cms_Model_Application_Page_Block_Video_Podcast())
+                        ->find($this->getVideoId(), 'video_id');
+                    $data = $podcast->getData();
+                break;
+            case 'youtube':
+                    $youtube = (new Cms_Model_Application_Page_Block_Video_Youtube())
+                        ->find($this->getVideoId(), 'video_id');
+                    $data = $youtube->getData();
+                break;
+        }
+
+        $yamlData['block_type'] = [
+            'type' => $this->getTypeId(),
+            'block' => $data
+        ];
+
+        return $yamlData;
     }
 
 }

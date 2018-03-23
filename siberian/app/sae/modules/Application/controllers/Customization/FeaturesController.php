@@ -1012,7 +1012,7 @@ class Application_Customization_FeaturesController extends Application_Controlle
                         if (class_exists($exporter_class) && method_exists($exporter_class, "exportAction")) {
                             $tmp_class = new $exporter_class();
                             $exportType = $selected_options[$option->getId()];
-                            $dataset = $tmp_class->exportAction($option, $exportType);
+                            $dataset = $tmp_class->exportAction($option, $exportType, $request);
                             file_put_contents("{$options_directory}/{$option->getPosition()}-{$option->getCode()}.yml", $dataset);
                         }
                     }

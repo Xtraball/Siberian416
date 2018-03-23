@@ -105,18 +105,18 @@ class Siberian_Autoupdater {
                 file_put_contents($manifest_path, $manifest);
 
                 # Release version change
-                $release = array(
-                    "content_url"           => $host.__ss($platform.$www_folder),
-                    "min_native_interface"  => Siberian_Version::NATIVE_VERSION,
-                    "release"               => System_Model_Config::getValueFor("current_release"),
-                );
+                $release = [
+                    'content_url' => $host.__ss($platform.$www_folder),
+                    'min_native_interface' => Siberian_Version::NATIVE_VERSION,
+                    'release' => System_Model_Config::getValueFor('current_release'),
+                ];
 
                 $release = Siberian_Json::encode($release, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
 
                 file_put_contents($json_path, $release);
 
                 # Editing config.xml path
-                if(isset(Siberian_Assets::$config_xml[$type])) {
+                if (isset(Siberian_Assets::$config_xml[$type])) {
                     $confix_xml_path = $path.Siberian_Assets::$config_xml[$type];
                     $path = $host.__ss($platform.$www_folder.self::$manifest_json);
                     __replace(

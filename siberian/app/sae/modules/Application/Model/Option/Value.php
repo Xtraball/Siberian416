@@ -574,6 +574,10 @@ class Application_Model_Option_Value extends Application_Model_Option {
      * @return $this
      */
     public function _setBackground($base64, $option) {
+        if (empty($base64)) {
+            return $this;
+        }
+
         $backgroundPath = $this->__setImageFromBase64($base64, $option, 1080, 1920);
         $this->setBackground($backgroundPath);
 
@@ -586,6 +590,10 @@ class Application_Model_Option_Value extends Application_Model_Option {
      * @return $this
      */
     public function _setBackgroundImage($base64, $option) {
+        if (empty($base64)) {
+            return $this;
+        }
+
         $backgroundPath = $this->__setImageFromBase64($base64, $option, 1080, 1920);
         $this->setBackgroundImage($backgroundPath);
 
@@ -598,6 +606,10 @@ class Application_Model_Option_Value extends Application_Model_Option {
      * @return $this
      */
     public function _setBackgroundLandscapeImage($base64, $option) {
+        if (empty($base64)) {
+            return $this;
+        }
+
         $backgroundPath = $this->__setImageFromBase64($base64, $option, 1920, 1080);
         $this->setBackgroundLandscapeImage($backgroundPath);
 

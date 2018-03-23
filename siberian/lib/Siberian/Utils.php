@@ -512,3 +512,28 @@ function img_to_base64($path) {
 
 	return $base64;
 }
+
+/**
+ * @param $path
+ * @return bool|string
+ */
+function fileToBase64 ($path) {
+    if (is_readable($path)) {
+        $data = file_get_contents($path);
+        return base64_encode($data);
+    }
+    return false;
+}
+
+/**
+ * @param $base64
+ * @param $path
+ */
+function base64DataToFile ($base64, $path) {
+    try {
+        $raw = base64_decode($base64);
+        file_put_contents($path, $raw);
+    } catch (Exception $e) {
+        log_err('base64DataToFile unable to decode the given data');
+    }
+}
