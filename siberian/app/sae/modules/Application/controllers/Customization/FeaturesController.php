@@ -883,12 +883,12 @@ class Application_Customization_FeaturesController extends Application_Controlle
                     /** Detect if it's a simple feature or a complete template Application */
                     $filetype = pathinfo($tmp_path, PATHINFO_EXTENSION);
                     switch($filetype) {
-                        case "yml":
+                        case 'yml': case 'yaml':
                                 $this->importFeature($tmp_path);
 
                                 $data["message"] = __("Feature successfuly imported.");
                             break;
-                        case"zip":
+                        case 'zip':
                                 if(!$this->getRequest()->getParam("confirm", false)) {
                                     $data = array(
                                         "confirm" => 1,
@@ -965,14 +965,18 @@ class Application_Customization_FeaturesController extends Application_Controlle
      */
     public function exportmodalAction() {
         $layout = $this->getLayout();
-        $layout->setBaseRender('modal', 'html/modal.phtml', 'core_view_default')
+        $layout
+            ->setBaseRender('modal', 'html/modal.phtml', 'core_view_default')
             ->setTitle(__('Import / Export'))
-            ->setBorderColor("border-blue")
-        ;
-        $layout->addPartial('modal_content', 'admin_view_default', 'application/customization/features/export.phtml');
-        $html = array('modal_html' => $layout->render());
+            ->setBorderColor('border-blue');
 
-        $this->_sendHtml($html);
+        $layout->addPartial('modal_content', 'admin_view_default', 'application/customization/features/export.phtml');
+
+        $payload = [
+            'modal_html' => $layout->render()
+        ];
+
+        $this->_sendJson($payload);
     }
 
     /**
@@ -983,90 +987,110 @@ class Application_Customization_FeaturesController extends Application_Controlle
         $options = $application->getOptions();
         $request = $this->getRequest();
 
-        $application_form_export = new Application_Form_Export();
-        $application_form_export->addOptions($application);
-        $application_form_export->addTemplate();
+        $applicationFormExport = new Application_Form_Export();
+        $applicationFormExport->addOptions($application);
+        $applicationFormExport->addTemplate();
 
-        # Export as Template
-        $is_template = $request->getParam("is_template");
-        if($is_template) {
-            $application_form_export->isTemplate();
+        // Export as Template!
+        $isTemplate = $request->getParam('is_template', false);
+        if ($isTemplate) {
+            $applicationFormExport->isTemplate();
         }
-        $template_name = $request->getParam("template_name", __("MyTemplate"));
-        $template_version = $request->getParam("template_version", "1.0");
-        $template_description = $request->getParam("template_description", __("My custom template"));
+        $templateName = $request->getParam('template_name', __('MyTemplate'));
+        $templateVersion = $request->getParam('template_version', '1.0');
+        $templateDescription = $request->getParam('template_description', __('My custom template'));
 
-        if ($application_form_export->isValid($request->getParams())) {
-            # Folder
-            $folder_name = "export-app-".$application->getId()."-".date("Y-m-d_h-i-s")."-".uniqid();
-            $tmp = Core_Model_Directory::getBasePathTo("var/tmp/");
-            $tmp_directory = $tmp."/".$folder_name;
-            $options_directory = $tmp_directory."/options";
-            mkdir($options_directory, 0777, true);
+        try {
+            if ($applicationFormExport->isValid($request->getParams())) {
+                // Folder!
+                $folderName = sprintf('export-app-%s-%s-%s',
+                    $application->getId(),
+                    date('Y-m-d_h-i-s'),
+                    uniqid());
 
-            $selected_options = $request->getParam("options");
-            foreach ($options as $option) {
-                if (isset($selected_options[$option->getId()]) && $selected_options[$option->getId()]) {
-                    if (Siberian_Exporter::isRegistered($option->getCode())) {
-                        $exporter_class = Siberian_Exporter::getClass($option->getCode());
-                        if (class_exists($exporter_class) && method_exists($exporter_class, "exportAction")) {
-                            $tmp_class = new $exporter_class();
-                            $exportType = $selected_options[$option->getId()];
-                            $dataset = $tmp_class->exportAction($option, $exportType, $request);
-                            file_put_contents("{$options_directory}/{$option->getPosition()}-{$option->getCode()}.yml", $dataset);
+                $tmp = Core_Model_Directory::getBasePathTo('/var/tmp/');
+                $tmpDirectory = $tmp . '/' . $folderName;
+                $optionsDirectory = $tmpDirectory . '/options';
+                mkdir($optionsDirectory, 0777, true);
+
+                $selectedOptions = $request->getParam('options');
+                foreach ($options as $option) {
+
+                    if (isset($selectedOptions[$option->getId()]) && $selectedOptions[$option->getId()]) {
+
+                        if (Siberian_Exporter::isRegistered($option->getCode())) {
+                            $exporterClass = Siberian_Exporter::getClass($option->getCode());
+
+                            if (class_exists($exporterClass) && method_exists($exporterClass, 'exportAction')) {
+                                $tmpClass = new $exporterClass();
+                                $exportType = $selectedOptions[$option->getId()];
+                                $dataset = $tmpClass->exportAction($option, $exportType, $request);
+
+                                $filename = sprintf('%s/%s-%s.yaml',
+                                    $optionsDirectory,
+                                    $option->getPosition(),
+                                    $option->getCode());
+                                file_put_contents($filename, $dataset);
+                            }
                         }
                     }
                 }
-            }
 
-            /** Application */
-            $application_dataset = $application->toYml();
-            file_put_contents("{$tmp_directory}/application.yml", $application_dataset);
+                // Application!
+                $applicationDataset = $application->toYml();
+                file_put_contents($tmpDirectory . '/application.yaml', $applicationDataset);
 
-            /** package.json */
-            $package = array(
-                "name" => ($is_template) ? $template_name : $folder_name,
-                "decription" => ($is_template) ? $template_description : "User exported application template.",
-                "version" => ($is_template) ? $template_version : "1.0",
-                "flavor" => Siberian_Exporter::FLAVOR,
-                "type" => "template",
-                "dependencies" => array(
-                    "system" => array(
-                        "type" => "SAE",
-                        "version" => Siberian_Exporter::MIN_VERSION,
-                    ),
-                ),
-            );
+                // package.json!
+                $package = [
+                    'name' => ($isTemplate) ? $templateName : $folderName,
+                    'decription' => ($isTemplate) ? $templateDescription : 'User exported application template.',
+                    'version' => ($isTemplate) ? $templateVersion : '1.0',
+                    'flavor' => Siberian_Exporter::FLAVOR,
+                    'type' => 'template',
+                    'dependencies' => [
+                        'system' => [
+                            'type' => 'SAE',
+                            'version' => Siberian_Exporter::MIN_VERSION,
+                        ],
+                    ],
+                ];
 
-            file_put_contents("{$tmp_directory}/package.json", Siberian_Json::encode($package));
+                file_put_contents($tmpDirectory . '/package.json', Siberian_Json::encode($package));
 
-            $zip = Core_Model_Directory::zip($tmp_directory, $tmp."/".$folder_name.".zip");
-            $base = Core_Model_Directory::getBasePathTo("");
-            $url = $this->getUrl().str_replace($base, "",  $zip);
+                $zip = Core_Model_Directory::zip($tmpDirectory, $tmp . '/' . $folderName . '.zip');
+                $base = Core_Model_Directory::getBasePathTo('');
+                $url = $this->getUrl().str_replace($base, '',  $zip);
 
-            if(file_exists($zip)) {
-                $data = array(
-                    "success" => 1,
-                    "message" => __("Downloading your package."),
-                    "type" => "download",
-                    "url" => $url
-                );
+                if (file_exists($zip)) {
+                    $payload = [
+                        'success' => true,
+                        'message' => __('Downloading your package.'),
+                        'type' => 'download',
+                        'url' => $url
+                    ];
+                } else {
+                    $payload = [
+                        'error' => true,
+                        'message' => __('#498-01: An error occured while exporting your application.')
+                    ];
+                }
+
             } else {
-                $data = array(
-                    "error" => 1,
-                    "message" => __("#498-01: An error occured while exporting your application.")
-                );
+                $payload = [
+                    'error' => true,
+                    'message' => $applicationFormExport->getTextErrors(),
+                    'errors' => $applicationFormExport->getTextErrors(true)
+                ];
             }
-
-        } else {
-            $data = array(
-                "error" => 1,
-                "message" => $application_form_export->getTextErrors(),
-                "errors" => $application_form_export->getTextErrors(true)
-            );
+        } catch (Exception $e) {
+            // Error
+            $payload = [
+                'error' => true,
+                'message' => $e->getMessage()
+            ];
         }
 
-        $this->_sendHtml($data);
+        $this->_sendJson($payload);
     }
 
 }

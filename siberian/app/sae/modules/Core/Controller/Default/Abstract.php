@@ -785,7 +785,7 @@ abstract class Core_Controller_Default_Abstract extends Zend_Controller_Action i
                 $exporter = new $class();
                 $result = $exporter->exportAction($option, $exportType, $request);
 
-                $this->_download($result, $option->getCode() . '-' . date("Y-m-d_h-i-s") . '.yml', 'text/x-yaml');
+                $this->_download($result, $option->getCode() . '-' . date('Y-m-d_h-i-s') . '.yaml', 'text/x-yaml');
             }
         }
     }

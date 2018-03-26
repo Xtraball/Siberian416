@@ -127,18 +127,4 @@ class Booking_ApplicationController extends Application_Controller_Default {
         $this->_sendJson($data);
     }
 
-    /**
-     * @param $option
-     * @return string
-     * @throws Exception
-     */
-    public function exportAction() {
-        if($this->getCurrentOptionValue()) {
-            $booking = new Booking_Model_Booking();
-            $result = $booking->exportAction($this->getCurrentOptionValue());
-
-            $this->_download($result, "booking-".date("Y-m-d_h-i-s").".yml", "text/x-yaml");
-        }
-    }
-
 }

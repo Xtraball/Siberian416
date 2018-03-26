@@ -85,20 +85,4 @@ class Weather_ApplicationController extends Application_Controller_Default {
 
         $this->_sendJson($html);
     }
-
-    /**
-     * @param $option
-     * @return string
-     * @throws Exception
-     */
-    public function exportAction() {
-        if($this->getCurrentOptionValue()) {
-            $weather = new Weather_Model_Weather();
-            $result = $weather->exportAction($this->getCurrentOptionValue());
-
-            $this->_download($result, "weather-".date("Y-m-d_h-i-s").".yml", "text/x-yaml");
-        }
-    }
-
-
 }

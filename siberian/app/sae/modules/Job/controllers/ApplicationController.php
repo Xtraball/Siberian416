@@ -71,18 +71,4 @@ class Job_ApplicationController extends Application_Controller_Default {
         $this->_sendHtml($html);
     }
 
-    /**
-     * @param $option
-     * @return string
-     * @throws Exception
-     */
-    public function exportAction() {
-        if($this->getCurrentOptionValue()) {
-            $job = new Job_Model_Job();
-            $result = $job->exportAction($this->getCurrentOptionValue());
-            
-            $this->_download($result, "job-".date("Y-m-d_h-i-s").".yml", "text/x-yaml");
-        }
-    }
-
 }
