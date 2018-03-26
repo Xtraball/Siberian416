@@ -307,4 +307,20 @@
         </views>
     </application_privacypolicy_index>
 
+    <application_advanced_export_index>
+        <addLayout name="admin_menu" />
+        <addLayout name="customization_default" />
+        <base>
+            <title>Export / Import</title>
+        </base>
+        <views>
+            <content class="admin_view_default" template="application/advanced/export/index.phtml" />
+            <customization_sidebar_left class="admin_view_default" template="application/customization/index/sidebar_left.phtml" />
+        </views>
+        <actions>
+            <customization_sidebar_left name="setCurrentLink"><code>import_export</code></customization_sidebar_left>
+            <header_menu name="setCurrentLink"><code>import_export</code></header_menu>
+        </actions>
+    </application_advanced_export_index>
+
 </layout>

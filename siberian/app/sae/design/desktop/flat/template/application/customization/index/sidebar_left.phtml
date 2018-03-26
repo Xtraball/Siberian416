@@ -125,7 +125,7 @@ $editorMenu = ['editor_design', 'editor_colors', 'editor_features', 'editor_appl
         <li>
             <a href="<?php echo $this->getUrl('customer/application/list'); ?>"
                class="<?php if($currentLink == 'customer'): ?> active<?php endif; ?>">
-                <i class="icofont icofont-exchange"></i>
+                <i class="fa fa-users"></i>
                 <?php echo __('Users'); ?>
             </a>
         </li>
@@ -135,9 +135,9 @@ $editorMenu = ['editor_design', 'editor_colors', 'editor_features', 'editor_appl
         <!-- Export/Import block -->
         <?php if($this->_canAccessAnyOf(['import_application', 'export_application'])):?>
             <li>
-                <a href="<?php echo $this->getUrl('customer/application/export'); ?>"
+                <a href="<?php echo $this->getUrl('application/advanced_export'); ?>"
                    class="<?php if($currentLink == 'import_export'): ?> active<?php endif; ?>">
-                    <i class="fa fa-users"></i>
+                    <i class="icofont icofont-exchange"></i>
                     <?php echo __('Export / Import'); ?>
                 </a>
             </li>
