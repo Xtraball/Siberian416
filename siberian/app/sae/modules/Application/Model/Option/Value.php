@@ -18,7 +18,7 @@
  * @method integer getOptionId()
  * @method integer getPosition()
  * @method string getCode()
- *
+ * @method $this setIconId(integer $iconId)
  */
 class Application_Model_Option_Value extends Application_Model_Option {
 

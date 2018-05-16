@@ -355,7 +355,7 @@ class Catalog_Model_Product extends Core_Model_Default {
                 $this->setData('price', $price);
             }
 
-            //MCommerce multi pictures
+            // MCommerce multi pictures!
             $this->addPictures();
             $this->deletePictures();
 
@@ -363,6 +363,8 @@ class Catalog_Model_Product extends Core_Model_Default {
 
             if ($this->getNewCategoryIds()) {
                 $this->getTable()->saveCategoryIds($this->getId(), $this->getNewCategoryIds());
+            } else {
+                $this->getTable()->saveCategoryIds($this->getId(), []);
             }
             $this->getType()->setProduct($this)->save();
 

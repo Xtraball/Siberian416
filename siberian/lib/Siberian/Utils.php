@@ -171,6 +171,23 @@ function is_image($path, $external = false) {
 }
 
 /**
+ * Get the directory size
+ *
+ * @param directory $directory
+ * @return integer
+ */
+function dirSize ($directory)
+{
+    $size = 0;
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory)) as $file){
+        if (!in_array($file->getFilename(), ['.', '..'])) {
+            $size += $file->getSize();
+        }
+    }
+    return $size;
+}
+
+/**
  * Actual design setup.
  *
  * - siberian
@@ -234,13 +251,25 @@ function ellipsis($string, $length, $ellipsis = "...") {
  * @return string
  */
 function formatBytes($bytes, $precision = 2) {
-	$units = array('B', 'KB', 'MB', 'GB', 'TB');
+	$units = ['B', 'KB', 'MB', 'GB', 'TB'];
 
 	$bytes = max($bytes, 0);
 	$pow = floor(($bytes ? log($bytes) : 0) / log(1024));
 	$pow = min($pow, count($units) - 1);
 
+    // Uncomment one of the following alternatives
+    $bytes /= pow(1024, $pow);
+
 	return round($bytes, $precision) . ' ' . $units[$pow];
+}
+
+/**
+ * Simple alias for GDPR features
+ *
+ * @return bool
+ */
+function isGdpr () {
+    return System_Model_Config::isGdprEnabled();
 }
 
 /**
@@ -297,7 +326,7 @@ function __jsd($string) {
  * @param null $locale
  * @return array|mixed|string
  */
-function __url($url = "", array $params = array(), $locale = null) {
+function __url($url = "", array $params = [], $locale = null) {
 	return Core_Model_Url::create($url, $params, $locale);
 }
 
@@ -307,7 +336,7 @@ function __url($url = "", array $params = array(), $locale = null) {
  * @param null $locale
  * @return array|mixed|string
  */
-function __path($url = "", array $params = array(), $locale = null) {
+function __path($url = "", array $params = [], $locale = null) {
 	return Core_Model_Url::createPath($url, $params, $locale);
 }
 
