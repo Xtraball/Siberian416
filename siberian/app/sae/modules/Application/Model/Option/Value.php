@@ -16,6 +16,7 @@
  * @method $this setFolderCategoryPosition(integer $folderCategoryPosition)
  * @method integer getFolderCategoryId()
  * @method integer getOptionId()
+ * @method $this setIconId(integer $iconId)
  *
  */
 class Application_Model_Option_Value extends Application_Model_Option {
@@ -572,6 +573,26 @@ class Application_Model_Option_Value extends Application_Model_Option {
         $meta->setCode($code);
         $meta->setPayload($payload);
         return $meta;
+    }
+
+    /**
+     * This method will extract any features that were inside a deleted folder!
+     *
+     * @param $valueId
+     */
+    public static function extractFromFolder ($valueId) {
+        $features = (new self)
+            ->findAll([
+                'folder_id = ?' =>  $valueId
+            ]);
+
+        foreach ($features as $feature) {
+            $feature
+                ->setFolderId(null)
+                ->setFolderCategoryId(null)
+                ->setFolderCategoryPosition(null)
+                ->save();
+        }
     }
 
     /**

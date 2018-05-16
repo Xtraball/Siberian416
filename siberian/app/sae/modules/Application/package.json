@@ -1,7 +1,7 @@
 {
   "name": "Application",
-  "decription": "",
-  "version": "4.13.0",
+  "description": "",
+  "version": "4.13.19",
   "dependencies": {
     "system": {
       "type": "SAE",

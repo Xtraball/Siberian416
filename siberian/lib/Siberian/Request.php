@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * Class Siberian_Request
+ */
 class Siberian_Request {
 
     /**
@@ -16,29 +19,56 @@ class Siberian_Request {
      * @param $endpoint
      * @param $data
      * @param null $cookie_path
+     * @param null $auth
+     * @param null $headers
+     * @param array $options
      * @return mixed
      */
-    public static function post($endpoint, $data, $cookie_path = null) {
+    public static function post($endpoint, $data, $cookie_path = null, $auth = null, $headers = null, $options = []) {
 
         $request = curl_init();
+
+        $timeout = (array_key_exists('timeout', $options)) ? intval($options['options']) : 3;
 
         # Setting options
         curl_setopt($request, CURLOPT_URL, $endpoint);
         curl_setopt($request, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($request, CURLOPT_TIMEOUT, 3);
+        curl_setopt($request, CURLOPT_TIMEOUT, $timeout);
         curl_setopt($request, CURLOPT_FOLLOWLOCATION, true);
         curl_setopt($request, CURLOPT_POST, true);
         curl_setopt($request, CURLOPT_SSL_VERIFYHOST, false);
         curl_setopt($request, CURLOPT_SSL_VERIFYPEER, false);
 
-        if($cookie_path != null) {
+        if ($auth !== null && is_array($auth)) {
+            switch ($auth['type']) {
+                case 'basic':
+                    curl_setopt($request, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+                    curl_setopt($request, CURLOPT_USERPWD, $auth['username'] . ':' . $auth['password']);
+                    break;
+                case 'bearer':
+                    curl_setopt($request, CURLOPT_HTTPHEADER, [
+                        'Api-Auth-Bearer: Bearer ' . $auth['bearer']
+                    ]);
+                    break;
+            }
+        }
+
+        if ($cookie_path !== null) {
             curl_setopt($request, CURLOPT_COOKIEJAR, $cookie_path);
             curl_setopt($request, CURLOPT_COOKIEFILE, $cookie_path);
         }
 
+        if ($headers !== null) {
+            curl_setopt($request, CURLOPT_HTTPHEADER, $headers);
+        }
+
         # Query string
-        $query_string = http_build_query($data);
-        curl_setopt($request, CURLOPT_POSTFIELDS, $query_string);
+        if (array_key_exists('json_body', $options)) {
+            curl_setopt($request, CURLOPT_POSTFIELDS, $data);
+        } else {
+            $query_string = http_build_query($data);
+            curl_setopt($request, CURLOPT_POSTFIELDS, $query_string);
+        }
 
         # Call
         $result = curl_exec($request);
@@ -50,7 +80,7 @@ class Siberian_Request {
         # Closing connection
         curl_close($request);
 
-        if(self::$debug) {
+        if (self::$debug) {
             log_debug("[CODE POST] ".$status_code);
         }
 
@@ -60,15 +90,18 @@ class Siberian_Request {
 
     /**
      * @param $endpoint
-     * @param $data
+     * @param array $data
      * @param null $cookie_path
+     * @param null $auth
+     * @param null $headers
+     * @param array $options
      * @return mixed
      */
-    public static function get($endpoint, $data = [], $cookie_path = null) {
+    public static function get($endpoint, $data = [], $cookie_path = null, $auth = null, $headers = null, $options = []) {
 
         $request = curl_init();
 
-        if(strpos($endpoint, "?") === false && !empty($data)) {
+        if (strpos($endpoint, "?") === false && !empty($data)) {
             $endpoint .= "?".http_build_query($data);
         }
 
@@ -80,13 +113,32 @@ class Siberian_Request {
         curl_setopt($request, CURLOPT_SSL_VERIFYHOST, false);
         curl_setopt($request, CURLOPT_SSL_VERIFYPEER, false);
 
-        if($cookie_path != null) {
+        if ($auth !== null && is_array($auth)) {
+            switch ($auth['type']) {
+                case 'basic':
+                    curl_setopt($request, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+                    curl_setopt($request, CURLOPT_USERPWD, $auth['username'] . ':' . $auth['password']);
+                    break;
+                case 'bearer':
+                    curl_setopt($request, CURLOPT_HTTPHEADER, [
+                        'Api-Auth-Bearer: Bearer ' . $auth['bearer']
+                    ]);
+                    break;
+            }
+        }
+
+        if ($cookie_path != null) {
             curl_setopt($request, CURLOPT_COOKIEJAR, $cookie_path);
             curl_setopt($request, CURLOPT_COOKIEFILE, $cookie_path);
         }
 
+        if ($headers !== null) {
+            curl_setopt($request, CURLOPT_HTTPHEADER, $headers);
+        }
+
         # Call
         $result = curl_exec($request);
+
         $status_code = curl_getinfo($request, CURLINFO_HTTP_CODE);
 
         # Save last status code
@@ -95,7 +147,7 @@ class Siberian_Request {
         # Closing connection
         curl_close($request);
 
-        if(self::$debug) {
+        if (self::$debug) {
             log_debug("[CODE GET] " . $status_code);
         }
 

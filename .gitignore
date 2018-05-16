@@ -14,6 +14,7 @@ build/
 __*
 .sass-cache
 .gradle
+package-lock.json
 
 # Development files
 /developer.json
@@ -22,9 +23,9 @@ __*
 /apache.default
 /nginx.default
 npm-debug.log
-ionic.project
 /node_modules/
 /modules/
+/ionic/platforms/Archive.zip
 
 # Locally built packages
 /packages/*

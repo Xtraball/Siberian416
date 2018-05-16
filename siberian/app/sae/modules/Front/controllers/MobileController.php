@@ -33,11 +33,11 @@ class Front_MobileController extends Application_Controller_Mobile_Default {
                 "css" => file_get_contents($css_file)
             );
 
-            $this->cache->save($data_css, $cache_id_css, array(
+            $this->cache->save($data_css, $cache_id_css, [
                 "v3",
                 "front_mobile_load_css",
                 "css_app_".$app_id
-            ));
+            ]);
 
             $data_css["x-cache"] = "MISS";
         } else {
@@ -49,14 +49,14 @@ class Front_MobileController extends Application_Controller_Mobile_Default {
 
         /** ========== Load Cache ========== */
         $cache_id_loadv2 = "v3_front_mobile_load_app_{$app_id}";
-        if(!$result = $this->cache->load($cache_id_loadv2)) {
+        if (!$result = $this->cache->load($cache_id_loadv2)) {
 
             # Compress homepage default
             $homepage_image = Core_Model_Directory::getBasePathTo($this->getApplication()->getHomepageBackgroundImageUrl());
             $homepage_image_b64 = Siberian_Image::open($homepage_image)->cropResize(256)->inline();
 
             $google_maps_key = $application->getGooglemapsKey();
-            if(!empty($google_maps_key)) {
+            if (!empty($google_maps_key)) {
                 $googlemaps_key = $application->getGooglemapsKey();
             } else {
                 $api = Api_Model_Key::findKeysFor("googlemaps");
@@ -64,21 +64,19 @@ class Front_MobileController extends Application_Controller_Mobile_Default {
             }
 
             $privacy_policy = trim($application->getPrivacyPolicy());
-            if(empty($privacy_policy)) {
+            if (empty($privacy_policy)) {
                 $privacy_policy = false;
             }
 
             $privacy_policy_title = trim($application->getPrivacyPolicyTitle());
-            if(empty($privacy_policy_title)) {
+            if (empty($privacy_policy_title)) {
                 $privacy_policy_title = __("Privacy policy");
             }
 
             $icon_color = strtolower($application->getAndroidPushColor());
-            if(!preg_match("/^#[a-f0-9]{6}$/", $icon_color)) {
-
+            if (!preg_match("/^#[a-f0-9]{6}$/", $icon_color)) {
                 # Fallback with a number only color ...
                 $icon_color = "#808080";
-
             }
 
             $progressbar_color = $application->getBlock("dialog_text")->getColor();
@@ -86,7 +84,7 @@ class Front_MobileController extends Application_Controller_Mobile_Default {
             $progressbar_color = Siberian_Color::newColor($progressbar_color, "hex");
             $progressbar_trail_color = Siberian_Color::newColor($progressbar_trail_color, "hex");
 
-            if($progressbar_trail_color->lightness > 80) {
+            if ($progressbar_trail_color->lightness > 80) {
                 $progressbar_trail_color = $progressbar_trail_color->getNew("lightness", $progressbar_color->lightness - 20);
             } else {
                 $progressbar_trail_color = $progressbar_trail_color->getNew("lightness", $progressbar_color->lightness + 20);
@@ -97,6 +95,9 @@ class Front_MobileController extends Application_Controller_Mobile_Default {
             $bg_color = Siberian_Color::newColor($bg_color_hex, "hex");
             $bg_color->alpha = $bg_block->getBackgroundOpacity() / 100;
 
+            $colorStatusBar = Siberian_Color::newColor($application->getBlock("header")->getBackgroundColor(), 'hex');
+            $colorStatusBarLighten = $colorStatusBar->getNew('lightness', $colorStatusBar->lightness - 10);
+
             $data_load = array(
                 "application" => array(
                     "id"            => $app_id,
@@ -105,17 +106,18 @@ class Front_MobileController extends Application_Controller_Mobile_Default {
                     "is_bo_locked"  => (boolean) $application->getIsLocked(),
                     "colors" => array(
                         "header" => array(
-                            "backgroundColor"   => $application->getBlock("header")->getBackgroundColorRGB(),
-                            "color"             => $application->getBlock("header")->getColorRGB()
+                            "statusBarColor" => $colorStatusBarLighten->toCSS("hex"),
+                            "backgroundColor" => $application->getBlock("header")->getBackgroundColorRGB(),
+                            "color" => $application->getBlock("header")->getColorRGB()
                         ),
                         "background" => array(
-                            "backgroundColor"   => $bg_color_hex,
-                            "color"             => $application->getBlock("background")->getColor(),
-                            "rgba"              => $bg_color->toCSS('rgba')
+                            "backgroundColor" => $bg_color_hex,
+                            "color" => $application->getBlock("background")->getColor(),
+                            "rgba" => $bg_color->toCSS('rgba')
                         ),
                         "loader" => array(
-                            "trail"                  => $progressbar_trail_color->toCSS("hex"),
-                            "bar_text"               => $progressbar_color->toCSS("hex"),
+                            "trail" => $progressbar_trail_color->toCSS("hex"),
+                            "bar_text" => $progressbar_color->toCSS("hex"),
                         ),
                         "list_item" => array(
                             "color" => $application->getBlock("list_item")->getColor()
@@ -124,18 +126,20 @@ class Front_MobileController extends Application_Controller_Mobile_Default {
                     "admob" => $this->__getAdmobSettings(),
                     "admob_v2" => $this->__getAdmobSettingsV2(),
                     "facebook" => array(
-                        "id"    => empty($application->getFacebookId()) ? null : $application->getFacebookId(),
+                        "id" => empty($application->getFacebookId()) ? null : $application->getFacebookId(),
                         "scope" => Customer_Model_Customer_Type_Facebook::getScope()
                     ),
-                    "gcm_senderid"                  => Push_Model_Certificate::getAndroidSenderId(),
-                    "gcm_iconcolor"                 => $icon_color,
-                    "googlemaps_key"                => $googlemaps_key,
-                    "offline_content"               => (boolean) $application->getOfflineContent(),
-                    "ios_status_bar_is_hidden"      => (boolean) $application->getIosStatusBarIsHidden(),
-                    "android_status_bar_is_hidden"  => (boolean) $application->getAndroidStatusBarIsHidden(),
-                    "privacy_policy_title"          => $privacy_policy_title,
-                    "privacy_policy"                => str_replace("#APP_NAME", $application->getName(), $privacy_policy),
-                    "homepage_background"           => (boolean) $application->getUseHomepageBackgroundImageInSubpages(),
+                    "gcm_senderid" => Push_Model_Certificate::getAndroidSenderId(),
+                    "gcm_iconcolor" => $icon_color,
+                    "googlemaps_key" => $googlemaps_key,
+                    "offline_content" => (boolean) $application->getOfflineContent(),
+                    "ios_status_bar_is_hidden" => (boolean) $application->getIosStatusBarIsHidden(),
+                    "android_status_bar_is_hidden" => (boolean) $application->getAndroidStatusBarIsHidden(),
+                    "privacy_policy_title" => $privacy_policy_title,
+                    "privacy_policy" => str_replace("#APP_NAME", $application->getName(), $privacy_policy),
+                    'privacy_policy_gdpr' => $application->getPrivacyPolicyGdpr(),
+                    'gdprIsEnabled' => isGdpr(),
+                    "homepage_background" => (boolean) $application->getUseHomepageBackgroundImageInSubpages(),
                 ),
                 "homepage_image" => $homepage_image_b64
             );
@@ -160,11 +164,11 @@ class Front_MobileController extends Application_Controller_Mobile_Default {
         if(!$result = $this->cache->load($cache_id_homepage)) {
 
             $option_values = $application->getPages(10, true);
-            $data_pages = array();
+            $data_pages = [];
             $color = $application->getBlock("tabbar")->getImageColor();
             $background_color = $application->getBlock("tabbar")->getBackgroundColor();
 
-            $touched_values = array();
+            $touched_values = [];
             foreach ($option_values as $option_value) {
 
                 $touched_values[$option_value->getId()] = array(
@@ -1315,10 +1319,10 @@ class Front_MobileController extends Application_Controller_Mobile_Default {
         $application = $this->getApplication();
 
         $subscription = null;
-        $pe_use_ads = null;
+        $planUseAds = null;
         if($this->isPe()) {
             $subscription = $application->getSubscription()->getSubscription();
-            $pe_use_ads = $subscription->getUseAds();
+            $planUseAds = $subscription->getUseAds();
         }
 
         $device = $this->getDevice()->isIosdevice() ? $application->getDevice(1) : $application->getDevice(2);
@@ -1331,7 +1335,7 @@ class Front_MobileController extends Application_Controller_Mobile_Default {
             );
 
         } else {
-            if($pe_use_ads) {
+            if($planUseAds) {
 
                 $settings = array(
                     "id" => System_Model_Config::getValueFor("application_".$device->getType()->getOsName()."_owner_admob_id"),
@@ -1417,39 +1421,39 @@ class Front_MobileController extends Application_Controller_Mobile_Default {
         $application = $this->getApplication();
 
         $subscription = null;
-        $pe_use_ads = false;
-        if($this->isPe()) {
+        $planUseAds = false;
+        if ($this->isPe()) {
             $subscription = $application->getSubscription()->getSubscription();
-            $pe_use_ads = $subscription->getUseAds();
+            $planUseAds = $subscription->getUseAds();
         }
 
         $ios_device = $application->getDevice(1);
         $android_device = $application->getDevice(2);
 
         # Platform/Subscription settings
-        if($application->getOwnerUseAds()) {
+        if ($application->getOwnerUseAds()) {
 
             $ios_types = explode("-", $ios_device->getOwnerAdmobType());
             $ios_weight = (integer) $ios_device->getOwnerAdmobWeight();
             $android_types = explode("-", $android_device->getOwnerAdmobType());
             $android_weight = (integer) $android_device->getOwnerAdmobWeight();
 
-            $payload["platform"] = array(
-                "ios" => array(
-                    "banner_id"         => $ios_device->getOwnerAdmobId(),
-                    "interstitial_id"   => $ios_device->getOwnerAdmobInterstitialId(),
-                    "banner"            => (boolean) in_array("banner", $ios_types),
-                    "interstitial"      => (boolean) in_array("interstitial", $ios_types),
-                    "videos"            => (boolean) in_array("videos", $ios_types), # Prepping the future.
-                ),
-                "android" => array(
-                    "banner_id"         => $android_device->getOwnerAdmobId(),
-                    "interstitial_id"   => $android_device->getOwnerAdmobInterstitialId(),
-                    "banner"            => (boolean) in_array("banner", $android_types),
-                    "interstitial"      => (boolean) in_array("interstitial", $android_types),
-                    "videos"            => (boolean) in_array("videos", $android_types), # Prepping the future.
-                ),
-            );
+            $payload["platform"] = [
+                "ios" => [
+                    "banner_id" => $ios_device->getOwnerAdmobId(),
+                    "interstitial_id" => $ios_device->getOwnerAdmobInterstitialId(),
+                    "banner" => (boolean) in_array("banner", $ios_types),
+                    "interstitial" => (boolean) in_array("interstitial", $ios_types),
+                    "videos" => (boolean) in_array("videos", $ios_types), # Prepping the future.
+                ],
+                "android" => [
+                    "banner_id" => $android_device->getOwnerAdmobId(),
+                    "interstitial_id" => $android_device->getOwnerAdmobInterstitialId(),
+                    "banner" => (boolean) in_array("banner", $android_types),
+                    "interstitial" => (boolean) in_array("interstitial", $android_types),
+                    "videos" => (boolean) in_array("videos", $android_types), # Prepping the future.
+                ],
+            ];
 
             if(($ios_weight >= 0) && ($ios_weight <= 100)) {
                 $weight = ($ios_weight/100);
@@ -1463,8 +1467,7 @@ class Front_MobileController extends Application_Controller_Mobile_Default {
                 $payload["android_weight"]["app"] = (1 - $weight);
             }
 
-        } else if(($pe_use_ads && System_Model_Config::getValueFor("application_owner_use_ads")) ||
-            System_Model_Config::getValueFor("application_owner_use_ads")) {
+        } else if (($planUseAds || System_Model_Config::getValueFor("application_owner_use_ads"))) {
 
             $ios_key = "application_" . $ios_device->getType()->getOsName() . "_owner_admob_%s";
             $android_key = "application_" . $android_device->getType()->getOsName() . "_owner_admob_%s";
@@ -1474,30 +1477,30 @@ class Front_MobileController extends Application_Controller_Mobile_Default {
             $android_types = explode("-", System_Model_Config::getValueFor(sprintf($android_key, "type")));
             $android_weight = (integer) System_Model_Config::getValueFor(sprintf($android_key, "weight"));
 
-            $payload["platform"] = array(
-                "ios" => array(
-                    "banner_id"         => System_Model_Config::getValueFor(sprintf($ios_key, "id")),
-                    "interstitial_id"   => System_Model_Config::getValueFor(sprintf($ios_key, "interstitial_id")),
-                    "banner"            => (boolean) in_array("banner", $ios_types),
-                    "interstitial"      => (boolean) in_array("interstitial", $ios_types),
-                    "videos"            => (boolean) in_array("videos", $ios_types), # Prepping the future.
-                ),
-                "android" => array(
-                    "banner_id"         => System_Model_Config::getValueFor(sprintf($android_key, "id")),
-                    "interstitial_id"   => System_Model_Config::getValueFor(sprintf($android_key, "interstitial_id")),
-                    "banner"            => (boolean) in_array("banner", $android_types),
-                    "interstitial"      => (boolean) in_array("interstitial", $android_types),
-                    "videos"            => (boolean) in_array("videos", $android_types), # Prepping the future.
-                ),
-            );
+            $payload["platform"] = [
+                "ios" => [
+                    "banner_id" => System_Model_Config::getValueFor(sprintf($ios_key, "id")),
+                    "interstitial_id" => System_Model_Config::getValueFor(sprintf($ios_key, "interstitial_id")),
+                    "banner" => (boolean) in_array("banner", $ios_types),
+                    "interstitial" => (boolean) in_array("interstitial", $ios_types),
+                    "videos" => (boolean) in_array("videos", $ios_types), # Prepping the future.
+                ],
+                "android" => [
+                    "banner_id" => System_Model_Config::getValueFor(sprintf($android_key, "id")),
+                    "interstitial_id" => System_Model_Config::getValueFor(sprintf($android_key, "interstitial_id")),
+                    "banner" => (boolean) in_array("banner", $android_types),
+                    "interstitial" => (boolean) in_array("interstitial", $android_types),
+                    "videos" => (boolean) in_array("videos", $android_types), # Prepping the future.
+                ],
+            ];
 
-            if(($ios_weight >= 0) && ($ios_weight <= 100)) {
+            if (($ios_weight >= 0) && ($ios_weight <= 100)) {
                 $weight = ($ios_weight/100);
                 $payload["ios_weight"]["platform"] = $weight;
                 $payload["ios_weight"]["app"] = (1 - $weight);
             }
 
-            if(($android_weight >= 0) && ($android_weight <= 100)) {
+            if (($android_weight >= 0) && ($android_weight <= 100)) {
                 $weight = ($android_weight/100);
                 $payload["android_weight"]["platform"] = $weight;
                 $payload["android_weight"]["app"] = (1 - $weight);
@@ -1505,28 +1508,27 @@ class Front_MobileController extends Application_Controller_Mobile_Default {
 
         }
 
-        if($application->getUseAds()) {
+        if ($application->getUseAds()) {
 
             $ios_types = explode("-", $ios_device->getAdmobType());
             $android_types = explode("-", $android_device->getAdmobType());
 
-            $payload["app"] = array(
-                "ios" => array(
-                    "banner_id"         => $ios_device->getAdmobId(),
-                    "interstitial_id"   => $ios_device->getAdmobInterstitialId(),
-                    "banner"            => (boolean) in_array("banner", $ios_types),
-                    "interstitial"      => (boolean) in_array("interstitial", $ios_types),
-                    "videos"            => (boolean) in_array("videos", $ios_types), # Prepping the future.
-                ),
-                "android" => array(
-                    "banner_id"         => $android_device->getAdmobId(),
-                    "interstitial_id"   => $android_device->getAdmobInterstitialId(),
-                    "banner"            => (boolean) in_array("banner", $android_types),
-                    "interstitial"      => (boolean) in_array("interstitial", $android_types),
-                    "videos"            => (boolean) in_array("videos", $android_types), # Prepping the future.
-                ),
-            );
-
+            $payload["app"] = [
+                "ios" => [
+                    "banner_id" => $ios_device->getAdmobId(),
+                    "interstitial_id" => $ios_device->getAdmobInterstitialId(),
+                    "banner" => (boolean) in_array("banner", $ios_types),
+                    "interstitial" => (boolean) in_array("interstitial", $ios_types),
+                    "videos" => (boolean) in_array("videos", $ios_types), # Prepping the future.
+                ],
+                "android" => [
+                    "banner_id" => $android_device->getAdmobId(),
+                    "interstitial_id" => $android_device->getAdmobInterstitialId(),
+                    "banner" => (boolean) in_array("banner", $android_types),
+                    "interstitial" => (boolean) in_array("interstitial", $android_types),
+                    "videos" => (boolean) in_array("videos", $android_types), # Prepping the future.
+                ],
+            ];
         } else {
             # If user don't use admob, split revenue is 100% for platform.
             $payload["ios_weight"]["platform"] = 1;

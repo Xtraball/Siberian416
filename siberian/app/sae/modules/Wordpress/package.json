@@ -1,7 +1,7 @@
 {
   "name": "Wordpress",
-  "decription": "",
-  "version": "4.12.19",
+  "description": "",
+  "version": "4.13.14",
   "dependencies": {
     "system": {
       "type": "SAE",

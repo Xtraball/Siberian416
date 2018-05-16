@@ -14,12 +14,14 @@ class Backoffice_IndexController extends Backoffice_Controller_Default
         $server_usage = Siberian_Cache::getDiskUsage();
         $libraries = Siberian_Media::getLibraries();
         $messages = Backoffice_Model_Notification::getMessages();
+        $system_diagnostic = Siberian_Service::getSystemDiagnostic();
 
         $html = array(
             "title" => __("Dashboard"),
             "icon" => "fa-dashboard",
             "services" => $services,
             "external_services" => $external_services,
+            "system_diagnostic" => $system_diagnostic,
             "libraries" => $libraries,
             "extensions" => $extensions,
             "server_usage" => $server_usage,
@@ -131,6 +133,9 @@ class Backoffice_IndexController extends Backoffice_Controller_Default
                         break;
                     case "app_manifest":
                         $message = __("Rebuilding application manifest files.");
+
+                        Siberian_Cache::__clearCache();
+                        unlink(Core_Model_Directory::getBasePathTo('/var/cache/design.cache'));
 
                         $default_cache = Zend_Registry::get("cache");
                         $default_cache->clean(Zend_Cache::CLEANING_MODE_ALL);
