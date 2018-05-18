@@ -64,10 +64,12 @@ $application->bootstrap();
 
 if (isset($argv[1])) {
     switch($argv[1]) {
+        case 'export:schemas':
         case 'export-schemas':
             (new Siberian_Migration_Db())
                 ->exportAll();
             break;
+        case 'export:database':
         case 'export-database':
             $dbParams = $config->resources->db->params;
             $filename = readline('Filename for the export: ');

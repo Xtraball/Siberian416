@@ -23,10 +23,10 @@ const notifier = require('node-notifier'),
 
 let platforms = [
     'android',
-    'android-previewer',
+    //'android-previewer',
     'ios',
     'ios-noads',
-    'ios-previewer',
+    //'ios-previewer',
     'browser'
 ];
 
@@ -424,7 +424,7 @@ let cleanLang = function () {
  */
 let exportDb = function () {
     sh.cd(ROOT + '/siberian');
-    sh.exec('php -f cli.php export-db');
+    sh.exec('php -f cli export:database');
 };
 
 /**
@@ -579,10 +579,10 @@ let rebuild = function (platform, copy, prepare, skipRebuild) {
         }
 
         if (platform === 'android' ||
-            platform === 'android-previewer' ||
+            //platform === 'android-previewer' ||
             platform === 'ios' ||
             platform === 'ios-noads' ||
-            platform === 'ios-previewer' ||
+            //platform === 'ios-previewer' ||
             platform === 'browser') {
             let silent = '--silent';
             if (DEBUG) {
@@ -617,7 +617,7 @@ let rebuild = function (platform, copy, prepare, skipRebuild) {
                 });
 
                 // Before building, copying json platform!
-                if (platform === 'ios-noads' || platform === 'ios-previewer' || platform === 'android-previewer') {
+                if (platform === 'ios-noads') {
                     sh.mv('-f', installPath + '/' +
                         platform.split('-')[0] + '.json', installPath+'/' + platform + '.json');
                 }
@@ -640,7 +640,7 @@ let rebuild = function (platform, copy, prepare, skipRebuild) {
             // Ios specific, run push.rb to patch push notifications!
             if (!prepare) {
                 patchIos(platform);
-                if (platform === 'ios-noads' || platform === 'ios-previewer' || platform === 'ios') {
+                if (platform === 'ios-noads' || platform === 'ios') {
                     sprint(clc.green('Patching platform project for Push entitlements ...'));
                     sh.exec(ROOT + '/bin/scripts/Patch ' + ROOT + '/ionic/platforms/' + platform + '/');
                 }
@@ -669,7 +669,7 @@ let rebuild = function (platform, copy, prepare, skipRebuild) {
 
 let patchIos = function (platform) {
     sh.cd(ROOT + '/bin/scripts/');
-    if (platform === 'ios-noads' || platform === 'ios-previewer' || platform === 'ios') {
+    if (platform === 'ios-noads' || platform === 'ios') {
         sprint(clc.green('Patching platform project for Push entitlements ...'));
         sh.exec('./Patch ' + ROOT + '/ionic/platforms/' + platform + '/');
     } else {
@@ -833,39 +833,39 @@ let copyPlatform = function (platform) {
 
         break;
 
-        case 'android-previewer':
-            sh.rm('-rf', ionicPlatformPath + '/build');
-            sh.rm('-rf', ionicPlatformPath + '/CordovaLib/build');
-            sh.rm('-rf', ionicPlatformPath + '/cordova/plugins');
-            sh.rm('-rf', ionicPlatformPath + '/assets/www/modules/*');
-
-            // Clean-up!
-            sh.rm('-rf', wwwPreviewerPlatformPath);
-
-            // Copy to local !
-            sh.rm('-rf', wwwPreviewerPlatformPath + '/');
-            sh.cp('-rf', ionicPlatformPath + '/', wwwPreviewerPlatformPath + '/');
-            sh.rm('-rf', wwwPreviewerPlatformPath + '/platform_www');
-            cleanupWww(wwwPreviewerPlatformPath + '/assets/www/');
-
-            break;
-
-        case 'ios-previewer':
-            sh.rm('-rf', ionicPlatformPath + '/build');
-            sh.rm('-rf', ionicPlatformPath + '/CordovaLib/build');
-            sh.rm('-rf', ionicPlatformPath + '/cordova/plugins');
-            sh.rm('-rf', ionicPlatformPath + '/www/modules/*');
-
-            // Clean-up!
-            sh.rm('-rf', wwwPreviewerPlatformPath);
-
-            // Copy to local !
-            sh.rm('-rf', wwwPreviewerPlatformPath + '/');
-            sh.cp('-rf', ionicPlatformPath + '/', wwwPreviewerPlatformPath + '/');
-            sh.rm('-rf', wwwPreviewerPlatformPath + '/platform_www');
-            cleanupWww(wwwPreviewerPlatformPath + '/www/');
-
-            break;
+//        case 'android-previewer':
+//            sh.rm('-rf', ionicPlatformPath + '/build');
+//            sh.rm('-rf', ionicPlatformPath + '/CordovaLib/build');
+//            sh.rm('-rf', ionicPlatformPath + '/cordova/plugins');
+//            sh.rm('-rf', ionicPlatformPath + '/assets/www/modules/*');
+//
+//            // Clean-up!
+//            sh.rm('-rf', wwwPreviewerPlatformPath);
+//
+//            // Copy to local !
+//            sh.rm('-rf', wwwPreviewerPlatformPath + '/');
+//            sh.cp('-rf', ionicPlatformPath + '/', wwwPreviewerPlatformPath + '/');
+//            sh.rm('-rf', wwwPreviewerPlatformPath + '/platform_www');
+//            cleanupWww(wwwPreviewerPlatformPath + '/assets/www/');
+//
+//            break;
+//
+//        case 'ios-previewer':
+//            sh.rm('-rf', ionicPlatformPath + '/build');
+//            sh.rm('-rf', ionicPlatformPath + '/CordovaLib/build');
+//            sh.rm('-rf', ionicPlatformPath + '/cordova/plugins');
+//            sh.rm('-rf', ionicPlatformPath + '/www/modules/*');
+//
+//            // Clean-up!
+//            sh.rm('-rf', wwwPreviewerPlatformPath);
+//
+//            // Copy to local !
+//            sh.rm('-rf', wwwPreviewerPlatformPath + '/');
+//            sh.cp('-rf', ionicPlatformPath + '/', wwwPreviewerPlatformPath + '/');
+//            sh.rm('-rf', wwwPreviewerPlatformPath + '/platform_www');
+//            cleanupWww(wwwPreviewerPlatformPath + '/www/');
+//
+//            break;
     }
 
     sprint('Copy done');
@@ -1550,7 +1550,7 @@ let archiveSources = function () {
     sh.exec('tar ' + excludes + ' -czf ./android.tgz ./android');
     sh.exec('tar ' + excludes + ' -czf ./ios.tgz ./ios');
     sh.exec('tar ' + excludes + ' -czf ./ios-noads.tgz ./ios-noads');
-    sh.exec('tar ' + excludes + ' -czf ./previewer.tgz ./previewer');
+    //sh.exec('tar ' + excludes + ' -czf ./previewer.tgz ./previewer');
 
     sh.cd(ROOT + '/siberian/var/apps');
     sh.exec('tar ' + excludes + ' -czf ./browser.tgz ./browser');
