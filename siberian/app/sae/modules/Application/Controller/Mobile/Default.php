@@ -164,17 +164,17 @@ class Application_Controller_Mobile_Default extends Core_Controller_Default {
     /**
      * Converts an array to json, set the header code to 400 if error
      *
-     * @param $data
+     * @param $payload
      * @param bool $send
      */
-    public function _sendJson($data, $send = false) {
+    public function _sendJson($payload, $send = false) {
         $response = $this->getResponse();
 
         $response->setHeader("Content-type", "application/json");
 
-        if(isset($data["error"]) && !empty($data["error"])) {
+        if (isset($payload["error"]) && !empty($payload["error"])) {
 
-            if(isset($data["gone"]) && $data["gone"]) {
+            if (isset($payload["gone"]) && $payload["gone"]) {
                 /** Resource is gone */
                 $response->setHttpResponseCode(410);
             } else {
@@ -184,11 +184,11 @@ class Application_Controller_Mobile_Default extends Core_Controller_Default {
         }
 
         /** Handle development case, unset exception messages in production. */
-        if(!Siberian_Debug::isDevelopment() && isset($data["exceptionMessage"])) {
-            unset($data["exceptionMessage"]);
+        if(!Siberian_Debug::isDevelopment() && isset($payload["exceptionMessage"])) {
+            unset($payload["exceptionMessage"]);
         }
 
-        $json = Siberian_Json::encode($data);
+        $json = Siberian_Json::encode($payload);
 
         $this->getLayout()->setHtml($json);
 

@@ -387,7 +387,7 @@ class Social_Model_Facebook extends Core_Model_Default {
      * @param array $params
      * @return string
      */
-    public static function buildUrl($path, $params = array()) {
+    public static function buildUrl($path, $params = []) {
         return sprintf("%s/%s?%s", self::$endpoint, $path, http_build_query($params));
     }
 

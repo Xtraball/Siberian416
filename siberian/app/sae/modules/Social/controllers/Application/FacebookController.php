@@ -16,8 +16,6 @@ class Social_Application_FacebookController extends Application_Controller_Defau
                 $isNew = false;
                 $application = $this->getApplication();
 
-                //https://graph.facebook.com/v2.7/propsfactory?fields=id,about,name,genre,cover,fan_count,likes,talking_about_count&access_token=972458572808643|RFO87sasWNc0AJke8Uk99QhCzqc
-
                 // Test s'il y a un value_id
                 if (empty($datas['value_id'])) {
                     throw new Siberian_Exception(__('An error occurred while saving. Please try again later.'));

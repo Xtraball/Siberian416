@@ -1,0 +1,75 @@
+<ion-view class="facebook-view"
+          sb-page-background>
+    <ion-nav-title>{{ page_title }}</ion-nav-title>
+
+    <ion-content class="facebook-layout1">
+
+        <div ng-include="template_header"></div>
+
+        <div class="loader"
+             ng-show="is_loading">
+            <ion-spinner class="spinner-custom"></ion-spinner>
+        </div>
+
+        <ion-refresher ng-if="use_pull_refresh"
+                       class="spinner-custom"
+                       pulling-text="{{ 'Pull to refresh...' | translate }}"
+                       on-refresh="pullToRefresh()">
+        </ion-refresher>
+
+        <div class="list"
+             ng-if="!card_design && collection.length">
+            <div ng-repeat="post in collection"
+                 ng-click="showPost(post)">
+                <div class="item item-custom"
+                     ng-class="{ 'item-avatar': post.icon }">
+                    <img ng-src="{{ post.icon }}"
+                         ng-if="post.icon" />
+                    <h2>{{ post.title ? post.title : post.author }}</h2>
+                    <p ng-if="post.subtitle">{{ post.subtitle }}</p>
+                    <p ng-if="post.message"
+                       ng-class="{ 'text-no-wrap':toggle_text }"
+                       ng-bind-html="post.message"></p>
+                </div>
+
+                <div class="item item-image item-custom">
+                    <div class="col col-75 col-offset-25">
+                        <img ng-src="{{ post.picture }}"
+                             ng-if="post.picture" />
+                        <p class="padding text-right">
+                            <span>
+                                <i class="ion-ios-calendar-outline"></i>
+                                <span >{{ post.created_time | moment_calendar }}</span>
+                            </span>
+                            <span>
+                                <i class="ion-ios-chatboxes-outline"></i>
+                                {{ post.comments.summary.total_count }}
+                            </span>
+                            <span>
+                                <i class="ion-ios-heart-outline"></i>
+                                {{ post.likes.summary.total_count }}
+                            </span>
+                            <span class="clear"></span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="list"
+             ng-class="{'card' : card_design}"
+             ng-if="!is_loading && !collection.length">
+            <div class="item text-center item-custom">
+                {{ "No items found" | translate }}
+            </div>
+        </div>
+
+        <ion-infinite-scroll ng-if="load_more"
+                             on-infinite="loadMore()"
+                             immediate-check="false"
+                             distance="10%"
+                             class="spinner-custom">
+        </ion-infinite-scroll>
+
+    </ion-content>
+</ion-view>
