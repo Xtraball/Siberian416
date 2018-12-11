@@ -1,0 +1,38 @@
+{
+    "name": "Booking (v2)",
+    "code": "booking_v2",
+    "version": "2.0.0",
+    "category": "contact",
+    "model": "Booking2_Model_Booking",
+    "desktop_uri": "booking2/application/",
+    "routes": [
+        {
+            "root": true,
+            "state": "booking2-home",
+            "controller": "Booking2HomeController",
+            "url": "booking2/mobile_list/index/value_id/:value_id",
+            "template": "l1/stores.html",
+            "cache": false
+        },
+        {
+            "state": "booking2-view",
+            "controller": "Booking2HomeController",
+            "url": "booking2/mobile_list/index/value_id/:value_id",
+            "template": "l1/form.html",
+            "cache": false
+        }
+    ],
+    "icons": [
+        "icons/booking1-flat.png",
+        "icons/booking2-flat.png",
+        "icons/booking3-flat.png",
+        "icons/booking4-flat.png"
+    ],
+    "files": [
+        "js/controllers/booking_v2.js",
+        "js/factory/booking_v2.js"
+    ],
+    "compile": true,
+    "use_account": false,
+    "only_once": false
+}

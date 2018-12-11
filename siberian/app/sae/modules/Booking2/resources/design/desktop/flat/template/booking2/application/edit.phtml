@@ -1,0 +1,132 @@
+<?php
+
+$application = $this->getApplication();
+$optionValue = $this->getOptionValue();
+$booking = new Booking_Model_Booking();
+$booking->find($optionValue->getId(), 'value_id');
+$store = new Booking_Model_Store();
+$stores = $store->findAll(['booking_id' => $booking->getId()]);
+
+?>
+<div id="list"
+     class="booking">
+    <h3 class="title-editor no-border-radius title-feature-indent">
+        <?php echo __('Add content'); ?>
+        <button type="button"
+                id="add_booking"
+                class="toggle_design color-blue pull-right bt-header-right btn">
+            <i class="fa fa-plus"></i>
+        </button>
+    </h3>
+    <?php echo $this->createPartialHtml('no_item', 'core_view_default', 'application/customization/features/edit/no_item.phtml'); ?>
+    <div class="container-fluid content-feature">
+        <div id="row_new"
+             style="display: none;">
+            <h4>
+                <?php echo __("Enter the location name and contact email:"); ?>
+            </h4>
+            <form id="new_form_booking"
+                  class="form_booking form-horizontal">
+                <div class="form-group">
+                    <div class="col-sm-4">
+                        <label for="store_name_new">
+                            <?php echo __('Location:') ?> <span class="required-entry"> *</span> </label>
+                    </div>
+                    <div class="col-sm-4">
+                        <label for="email_new">
+                            <?php echo __('Email:') ?> <span class="required-entry"> *</span> </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-4">
+                        <input type="text"
+                               id="store_name_new"
+                               name="store_name"
+                               class="input-flat required booking_field"
+                               value=""/>
+                    </div>
+                    <div class="col-sm-5">
+                        <input type="text"
+                               id="email_new"
+                               name="email"
+                               class="input-flat required booking_field email"
+                               value=""/>
+                    </div>
+                    <div class="col-sm-1">
+                        <button type="submit"
+                                class="btn color-blue save_booking"><?php echo __('OK'); ?></button>
+                    </div>
+                    <div class="col-sm-1">
+                        <button type="button"
+                                rel="new"
+                                class="delete_booking btn color-blue"><i class="fa fa-times"></i></button>
+                    </div>
+                </div>
+                <input type="hidden"
+                       name="value_id"
+                       value="<?php echo $optionValue->getId(); ?>"/>
+            </form>
+        </div>
+    </div>
+    <div id="existing_items_section" <?php if ($stores->count() == 0) : ?>
+        style="display:none;"<?php endif; ?>>
+        <h3 class="title-editor no-border-radius title-feature-indent">
+            <?php echo __('Manage content'); ?>
+            <button type="button"
+                    id="toggle_existing_items"
+                    class="toggle_design color-blue pull-right bt-header-right btn">
+                <i class="fa fa-angle-down"></i>
+            </button>
+        </h3>
+        <div id="existing_items"
+             class="container-fluid form-horizontal content-feature"
+             style="display:none">
+            <div class="form-group first-row-feature">
+                <div class="col-sm-4">
+                    <label><?php echo __('Location:') ?> <span class="required-entry"> *</span></label>
+                </div>
+                <div class="col-sm-8">
+                    <label><?php echo __('Email:') ?> <span class="required-entry"> *</span></label>
+                </div>
+            </div>
+            <div id="booking_list">
+                <?php foreach ($stores as $store) : ?>
+                    <?php echo $this->getLayout()->addPartial('row_' . $store->getId(), 'admin_view_default', 'booking/application/edit/row.phtml')
+                        ->setCurrentStore($store)
+                        ->setCurrentOptionValue($optionValue)
+                        ->toHtml()
+                    ?>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
+
+    <div class="background-images-import">
+        <?php echo $this->importBackground($optionValue); ?>
+    </div>
+</div>
+<style type="text/css">
+    .booking h4 {
+        font-size: 1em;
+        margin: 10px 0;
+    }
+
+    #row_new {
+        margin-top: 20px;
+    }
+
+    #booking_people_dummy, #booking_store_dummy {
+        margin-right: 0 !important
+    }
+
+    #booking_comment {
+        margin-top: 0 !important;
+    }
+
+    .booking .content-feature {
+        padding-bottom: 0;
+    }
+</style>
+
+<script type="text/javascript">
+</script>
