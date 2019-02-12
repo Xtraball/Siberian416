@@ -7,6 +7,13 @@ assignees: ''
 
 ---
 
+**New Issue Checklist**
+
+- [ ] Updated Siberian to the latest version
+- [ ] I read the [Contribution Guidelines](https://github.com/fastlane/fastlane/blob/master/CONTRIBUTING.md)
+- [ ] I read [doc.siberiancms.com](https://doc.siberiancms.com/)
+- [ ] I searched for [existing GitHub issues](https://github.com/Xtraball/Siberian/issues)
+
 **Your Siberian / Server**
 1. Edition (SAE/MAE/PE)
 2. Your version ex: 4.15.12
