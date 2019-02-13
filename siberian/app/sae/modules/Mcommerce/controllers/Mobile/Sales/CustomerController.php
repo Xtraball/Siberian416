@@ -45,6 +45,17 @@ class Mcommerce_Mobile_Sales_CustomerController extends Mcommerce_Controller_Mob
 
                 $cart->addData($info)->save();
 
+                //added by migastone////////////////////////////////////////////////
+                if (!empty($data['form']['customer']['id'])) {
+                    $customer = new Customer_Model_Customer();
+                    $customer->setData([
+                        "customer_id" => $data['form']['customer']['id']
+                    ]);
+                    $customer->setMetadatas($data['form']['customer']['metadatas']);
+                    $customer->save();
+                }
+                ////////////////////////////////////////////////////////////////////////
+
                 $html = [
                     'customer' => $version == "legacy" ?
                         $data['form']['customer'] : Mcommerce_Model_Customer::getCleanInfos($mcommerce, $data['form']['customer']),
